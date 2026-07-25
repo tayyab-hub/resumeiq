@@ -1,0 +1,30 @@
+# Normalise line endings.
+#
+# Without this, files authored on Windows land in the repository with CRLF and
+# then appear as wholly rewritten to anyone on Linux or macOS — including the
+# CI runner. Text is stored as LF in the repository and checked out with the
+# platform's native ending.
+* text=auto
+
+# Files that must keep LF even on Windows: shell scripts and Docker-related
+# files are executed inside Linux containers, where CRLF breaks the shebang.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+.dockerignore text eol=lf
+docker-compose.yml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Explicitly binary, so git never tries to normalise or diff them as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Generated: collapse in pull-request diffs so review stays readable.
+package-lock.json linguist-generated=true -diff

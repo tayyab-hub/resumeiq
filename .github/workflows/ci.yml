@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — lint, type, test
+    runs-on: ubuntu-latest
+
+    services:
+      # Tests run against PostgreSQL in CI even though they can run on SQLite
+      # locally: production is PostgreSQL, and a green suite on a different
+      # engine is a weaker signal.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: resumeiq
+          POSTGRES_PASSWORD: resumeiq
+          POSTGRES_DB: resumeiq_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U resumeiq"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint
+        run: ruff check app tests
+
+      - name: Verify migrations apply and roll back
+        env:
+          DATABASE_URL: postgresql+psycopg://resumeiq:resumeiq@localhost:5432/resumeiq_test
+          JWT_SECRET: ci-secret-key-that-is-long-enough-for-validation
+          ENVIRONMENT: test
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Test with coverage
+        env:
+          JWT_SECRET: ci-secret-key-that-is-long-enough-for-validation
+          ENVIRONMENT: test
+          AI_API_KEY: ''
+        # The gate covers the modules that hold the logic worth trusting.
+        run: |
+          pytest --cov=app/analyzers --cov=app/services --cov=app/security \
+                 --cov-report=term-missing --cov-fail-under=80
+
+  frontend:
+    name: Frontend — lint, type, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  security:
+    name: Security — dependency audit and secret scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Audit Python dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Audit npm dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+
+      - name: Fail if a committed .env is found
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "A .env file is committed. Remove it and rotate every secret it contained."
+            exit 1
+          fi
+
+      - name: Scan history for obvious secrets
+        run: |
+          if git log -p --all | grep -nE 'sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}'; then
+            echo "A credential pattern was found in the git history."
+            echo "Deleting the line is not enough — the secret must be rotated."
+            exit 1
+          fi
+          echo "No credential patterns found in history."
