@@ -1,0 +1,65 @@
+# Local development stack: database, API, and frontend.
+#
+#   cp backend/.env.example backend/.env
+#   docker compose up --build
+#
+# Frontend: http://localhost:5173   API: http://localhost:8000/docs
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: resumeiq-db
+    environment:
+      POSTGRES_USER: resumeiq
+      POSTGRES_PASSWORD: resumeiq
+      POSTGRES_DB: resumeiq
+    ports:
+      - '5432:5432'
+    volumes:
+      - resumeiq-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U resumeiq -d resumeiq']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: resumeiq-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DEBUG: 'true'
+      DATABASE_URL: postgresql+psycopg://resumeiq:resumeiq@db:5432/resumeiq
+      # Development-only value. Production sets a real secret in the host's
+      # environment; it is never committed.
+      JWT_SECRET: local-development-secret-not-for-production-use
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      # Leave empty to exercise the no-AI path, which must work in full.
+      AI_API_KEY: ${AI_API_KEY:-}
+    ports:
+      - '8000:8000'
+    # Migrations run once, here, before the server starts — not inside the
+    # image's CMD, where multiple workers would race.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./backend:/app
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+    container_name: resumeiq-web
+    depends_on:
+      - api
+    ports:
+      - '5173:80'
+
+volumes:
+  resumeiq-db-data:
