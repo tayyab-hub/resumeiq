@@ -27,7 +27,6 @@ def to_detail(analysis: Analysis) -> AnalysisDetailOut:
     findings = [
         StatementFindingOut.model_validate(finding) for finding in analysis.statement_findings
     ]
-    measurable = sum(1 for finding in analysis.statement_findings if finding.has_measurable_result)
 
     recommendations = sorted(
         analysis.recommendations,
@@ -62,15 +61,12 @@ def to_detail(analysis: Analysis) -> AnalysisDetailOut:
         ),
         sections=[ResumeSectionOut.model_validate(section) for section in analysis.sections],
         statements=StatementSummaryOut(
-            # total_bullets is not persisted separately; the stored findings are
-            # the bounded subset the user needs to see again.
-            total_bullets=len(analysis.statement_findings),
-            with_measurable_result=measurable,
-            action_verb_rate=0.0 if not findings else round(
-                sum(1 for f in analysis.statement_findings if "NO_ACTION_VERB" not in f.issue_codes)
-                / len(analysis.statement_findings),
-                4,
-            ),
+            # Read from the stored totals, not from `findings`: that list holds
+            # only the flagged statements, so counting metrics in it would
+            # report zero for a resume whose quantified bullets all passed.
+            total_bullets=analysis.statements_total,
+            with_measurable_result=analysis.statements_with_metric,
+            action_verb_rate=float(analysis.statements_action_verb_rate),
             findings=findings,
         ),
         job_analysis=JobAnalysisOut(

@@ -84,9 +84,21 @@ def extract_keywords(text: str, exclude: set[str]) -> tuple[str, ...]:
     return tuple(word for word, _ in counts.most_common(MAX_KEYWORDS))
 
 
+# Postings are frequently pasted from Markdown or from a bulleted list, so the
+# first line often carries decoration such as "## Backend Developer" or
+# "**Senior Engineer**". Left in place it is stored and displayed verbatim.
+_TITLE_DECORATION = re.compile(r"^[\s#>*\-–—•|=+~_]+|[\s#*_=~|]+$")
+
+
+def _clean_title(raw: str) -> str:
+    cleaned = _TITLE_DECORATION.sub("", raw).strip()
+    # Collapse any internal whitespace left by the stripped markers.
+    return re.sub(r"\s{2,}", " ", cleaned)
+
+
 def _first_line_title(text: str) -> str | None:
     for line in text.split("\n"):
-        candidate = line.strip()
+        candidate = _clean_title(line)
         if 3 <= len(candidate) <= 80 and not candidate.endswith((".", ":")):
             return candidate
     return None
@@ -113,15 +125,15 @@ def parse_job_description(
     all_skills = set(required) | set(preferred)
     keywords = extract_keywords(text, exclude=all_skills)
 
-    resolved_title = (job_title or "").strip() or None
+    resolved_title = _clean_title(job_title or "") or None
     if resolved_title is None:
         match = _TITLE_LINE.search(text)
-        resolved_title = match.group(1).strip() if match else _first_line_title(text)
+        resolved_title = _clean_title(match.group(1)) if match else _first_line_title(text)
 
-    resolved_company = (company_name or "").strip() or None
+    resolved_company = _clean_title(company_name or "") or None
     if resolved_company is None:
         match = _COMPANY_LINE.search(text)
-        resolved_company = match.group(1).strip() if match else None
+        resolved_company = _clean_title(match.group(1)) if match else None
 
     return JobProfile(
         raw_text=text,

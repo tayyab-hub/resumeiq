@@ -66,6 +66,17 @@ class Analysis(Base):
     store_resume_text: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     resume_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Statement statistics across the WHOLE resume. These must be stored
+    # separately because `statement_findings` holds only the flagged subset:
+    # a well-written bullet with a measurable result is never flagged, so
+    # deriving these counts from that table reports zero for a strong resume
+    # and contradicts the score the user is looking at.
+    statements_total: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    statements_with_metric: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    statements_action_verb_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0
+    )
+
     ai_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unavailable")
     ai_reason_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
 

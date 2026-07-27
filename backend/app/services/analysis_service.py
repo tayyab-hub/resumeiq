@@ -78,6 +78,12 @@ def persist_analysis(
         # Absent unless the user opted in. The database CHECK constraint
         # enforces the same rule independently of this line.
         resume_text=resume_text if store_resume_text else None,
+        # Whole-resume statistics. Stored because `statement_findings` below
+        # keeps only the flagged subset, and a strong resume's quantified
+        # bullets are precisely the ones that never get flagged.
+        statements_total=resume.statements.total_bullets,
+        statements_with_metric=resume.statements.with_measurable_result,
+        statements_action_verb_rate=resume.statements.action_verb_rate,
         ai_status="unavailable",
         ai_reason_code=None,
     )

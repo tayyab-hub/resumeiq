@@ -361,6 +361,40 @@ class TestJobDescriptionParsing:
         second = parse_job_description(FICTIONAL_JOB_DESCRIPTION)
         assert first == second
 
+    @pytest.mark.parametrize(
+        "first_line",
+        [
+            "## Backend Developer",
+            "# Backend Developer",
+            "**Backend Developer**",
+            "- Backend Developer",
+            "=== Backend Developer ===",
+            "  Backend Developer  ",
+        ],
+    )
+    def test_strips_markdown_decoration_from_the_detected_title(self, first_line):
+        """Postings pasted from Markdown must not keep their heading markers.
+
+        Regression: a posting beginning "## Backend Developer" was stored and
+        displayed with the hashes intact.
+        """
+        job = parse_job_description(
+            f"{first_line}\n\n"
+            "Requirements:\n"
+            "- Strong Python skills and experience with PostgreSQL databases\n"
+            "- Familiarity with Docker, REST APIs, Git and Linux environments\n"
+            "- Experience writing unit tests for backend services in production\n"
+        )
+        assert job.job_title == "Backend Developer"
+
+    def test_strips_decoration_from_an_explicit_title(self):
+        job = parse_job_description(
+            "Some posting body that is long enough to satisfy the parser and "
+            "mentions Python, Docker and PostgreSQL for the platform team.",
+            job_title="## Senior Engineer",
+        )
+        assert job.job_title == "Senior Engineer"
+
 
 # --- resume_analyzer -------------------------------------------------------
 

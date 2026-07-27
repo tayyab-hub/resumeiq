@@ -85,6 +85,46 @@ class TestCreateAnalysis:
     def test_all_nine_sections_are_reported(self, client, user_a, analysis_of):
         assert len(analysis_of(user_a)["sections"]) == 9
 
+    def test_statement_statistics_cover_the_whole_resume(self, client, user_a, analysis_of):
+        """Regression: the summary counted only the flagged statements.
+
+        statement_findings holds the flagged subset, and a bullet carrying a
+        measurable result is precisely the kind that is never flagged. Deriving
+        the totals from it reported zero achievements for a resume the scorer
+        had just awarded points for.
+        """
+        body = analysis_of(user_a)
+        statements = body["statements"]
+
+        # The fictional resume has four quantified bullets (40%, 12000 requests,
+        # 2 hours to 20 minutes, 34% to 81%).
+        assert statements["with_measurable_result"] >= 3, statements
+        assert statements["total_bullets"] > len(statements["findings"])
+        assert 0.0 < statements["action_verb_rate"] <= 1.0
+
+    def test_summary_agrees_with_the_achievement_score(self, client, user_a, analysis_of):
+        """The displayed count and the category that scored it must not disagree."""
+        body = analysis_of(user_a)
+        category = next(
+            c for c in body["score_breakdown"] if c["category_key"] == "measurable_achievements"
+        )
+        counted = body["statements"]["with_measurable_result"]
+
+        assert str(counted) in category["explanation"], (
+            f"summary says {counted} but the category explains: {category['explanation']}"
+        )
+        if counted > 0:
+            assert category["points_earned"] > 0
+
+    def test_markdown_job_title_is_cleaned(self, client, user_a, analysis_of):
+        """Regression: a posting starting '## Backend Developer' kept the hashes."""
+        body = analysis_of(
+            user_a,
+            job_description="## Backend Developer\n\n" + FICTIONAL_JOB_DESCRIPTION,
+        )
+        title = body["job_analysis"]["job_title"] or ""
+        assert not title.startswith("#"), title
+
     def test_requires_authentication(self, client):
         assert upload(client, {}).status_code == 401
 
