@@ -27,7 +27,12 @@ from app.repositories import user_repository as users
 from app.security.password import hash_password
 from app.services.analysis_service import persist_analysis
 
-DEMO_EMAIL = "demo@resumeiq.example"
+# example.com is the IETF-reserved documentation domain (RFC 2606) and is
+# accepted by the API's email validation. Addresses ending .invalid, .test or
+# .localhost are rejected as special-use, so the seeded account has to use a
+# domain the real registration endpoint would also accept — otherwise the demo
+# account could be created here but never logged into.
+DEMO_EMAIL = "demo@example.com"
 DEMO_PASSWORD = "demo account 2026"
 DEMO_NAME = "Demo User"
 
