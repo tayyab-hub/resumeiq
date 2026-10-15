@@ -6,12 +6,20 @@
 
 ---
 
+## Release corrections — 15 October 2026
+
+A report with zero candidate statements gets 0/0 for statement quality, not full credit. Remaining applicable categories rescale to 100. Round category maxima to two decimals, assign the residual to the largest applicable category (rubric order breaks ties), and calculate earned points using that adjusted maximum. The displayed maxima therefore sum to exactly 100 without claiming perfect quality for absent evidence.
+
+Candidate statements are explicit bullets or sufficiently long lines beginning with a recognized action verb/duty phrase. Contact lines, skill lists and most headings are excluded. This still misses wrapped/unusual writing and is not language comprehension. If no recognizable job skills are extracted, the report warns that the remaining rubric is not a reliable job-match estimate. An undetected skill is not proof of its absence. Synonyms deduplicate before scoring.
+
+The reproducible public sample uses a fixed date and real fixture PDF; `python -m scripts.export_sample --check` verifies its JSON. The arithmetic example below illustrates the rubric and should not be confused with the public sample's current 76-point score.
+
 ## 1. Principles
 
 1. **Every point is traceable.** For any score you can answer: which category, what weight,
    what evidence, what was missing.
-2. **Deterministic.** Same resume text + same job description = same score. No randomness,
-   no clock, no AI in the scoring path.
+2. **Deterministic.** Same resume text + same job description + same reference date = same score.
+   No randomness or AI in the scoring function; live date parsing uses today for Present.
 3. **Honest about its limits.** Every category publishes a limitation. The overall score
    carries a disclaimer everywhere it appears.
 4. **Never punitive about facts it cannot verify.** Where the analyser cannot know something
