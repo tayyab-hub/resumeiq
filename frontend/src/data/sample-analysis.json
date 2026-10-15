@@ -1,0 +1,591 @@
+{
+  "id": "00000000-0000-4000-8000-000000000001",
+  "title": "Jordan Reyes · Junior Backend Developer",
+  "resume_filename": "fictional-resume.pdf",
+  "created_at": "2026-10-15T00:00:00+00:00",
+  "overall_score": 76,
+  "disclaimer": "This score is an internal estimate produced by ResumeIQ's published rubric. It is not a simulation of any specific employer's applicant tracking system, and a high or low score does not predict whether you will be shortlisted.",
+  "evidence_warnings": [],
+  "score_breakdown": [
+    {
+      "category_key": "required_skills",
+      "category_name": "Required skill coverage",
+      "weight": 30.0,
+      "points_earned": 26.67,
+      "points_possible": 30.0,
+      "explanation": "Your resume matched 7 of 9 required skills, and partially matched 2.",
+      "evidence": [
+        {
+          "skill": "code review",
+          "display": "Code Review",
+          "status": "partial",
+          "matched_via": "related",
+          "snippet": "…ills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience…"
+        },
+        {
+          "skill": "docker",
+          "display": "Docker",
+          "status": "matched",
+          "matched_via": "exact",
+          "snippet": "…ices. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Ex…"
+        },
+        {
+          "skill": "git",
+          "display": "Git",
+          "status": "matched",
+          "matched_via": "exact",
+          "snippet": "…ills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience…"
+        },
+        {
+          "skill": "linux",
+          "display": "Linux",
+          "status": "matched",
+          "matched_via": "exact",
+          "snippet": "…PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience Junior Backend Develope…"
+        },
+        {
+          "skill": "postgresql",
+          "display": "PostgreSQL",
+          "status": "matched",
+          "matched_via": "exact",
+          "snippet": "…hon web services. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, L…"
+        },
+        {
+          "skill": "python",
+          "display": "Python",
+          "status": "matched",
+          "matched_via": "exact",
+          "snippet": "…hands-on experience building and maintaining Python web services. Skills Python, JavaScrip…"
+        },
+        {
+          "skill": "rest api",
+          "display": "REST APIs",
+          "status": "matched",
+          "matched_via": "alias",
+          "snippet": "…Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience Juni…"
+        },
+        {
+          "skill": "sql",
+          "display": "SQL",
+          "status": "partial",
+          "matched_via": "related",
+          "snippet": "…hon web services. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, L…"
+        },
+        {
+          "skill": "unit testing",
+          "display": "Unit Testing",
+          "status": "matched",
+          "matched_via": "alias",
+          "snippet": "…ease time from 2 hours to 20 minutes - Wrote unit tests with pytest, raising coverage from…"
+        }
+      ],
+      "recommendation": "Some skills matched only through a related technology. Naming the exact term used in the job description makes the match unambiguous.",
+      "limitation": "Skills are matched against a curated list of roughly 300 terms with known aliases. A skill written in unusual wording, or one not in the list, may not be recognised, which understates your score."
+    },
+    {
+      "category_key": "experience_relevance",
+      "category_name": "Relevant experience indicators",
+      "weight": 15.0,
+      "points_earned": 11.89,
+      "points_possible": 15.0,
+      "explanation": "Your resume shows about 4 year(s) and 3 month(s) of experience against a stated requirement of 2 year(s). 5 of the 9 required skills you do have appear inside your work experience section rather than only in a list.",
+      "evidence": [
+        {
+          "measure": "duration",
+          "earned": 8.0,
+          "possible": 8.0,
+          "detected_months": 51,
+          "required_months": 24
+        },
+        {
+          "measure": "contextual_relevance",
+          "earned": 3.89,
+          "possible": 7.0,
+          "skills_in_experience": 5,
+          "skills_found": 9
+        }
+      ],
+      "recommendation": "Reference the required technologies inside your experience bullets. A skill shown in the context of work you did is stronger evidence than one named in a list.",
+      "limitation": "Employment dates are parsed from common formats. Unusual date formats, or career gaps, may be measured inaccurately. This measures what your resume states; it does not verify it."
+    },
+    {
+      "category_key": "preferred_skills",
+      "category_name": "Preferred skill coverage",
+      "weight": 10.0,
+      "points_earned": 0.83,
+      "points_possible": 10.0,
+      "explanation": "Your resume matched 0 of 6 preferred skills, and partially matched 1.",
+      "evidence": [
+        {
+          "skill": "agile",
+          "display": "Agile",
+          "status": "missing",
+          "matched_via": null,
+          "snippet": null
+        },
+        {
+          "skill": "caching",
+          "display": "Caching",
+          "status": "missing",
+          "matched_via": null,
+          "snippet": null
+        },
+        {
+          "skill": "incident response",
+          "display": "Incident Response",
+          "status": "missing",
+          "matched_via": null,
+          "snippet": null
+        },
+        {
+          "skill": "kubernetes",
+          "display": "Kubernetes",
+          "status": "partial",
+          "matched_via": "related",
+          "snippet": "…ices. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Ex…"
+        },
+        {
+          "skill": "performance tuning",
+          "display": "Performance Optimisation",
+          "status": "missing",
+          "matched_via": null,
+          "snippet": null
+        },
+        {
+          "skill": "redis",
+          "display": "Redis",
+          "status": "missing",
+          "matched_via": null,
+          "snippet": null
+        }
+      ],
+      "recommendation": "5 preferred skill(s) were not found: Agile, Caching, Incident Response, Performance Optimisation, Redis. Add any you genuinely have, and reference them in a project or experience bullet rather than only in a list.",
+      "limitation": "\"Preferred\" is inferred from headings such as \"nice to have\" or \"bonus\". If the job description does not use those cues, all requirements are treated as required, which is disclosed on your result."
+    },
+    {
+      "category_key": "education_alignment",
+      "category_name": "Education alignment",
+      "weight": 10.0,
+      "points_earned": 10.0,
+      "points_possible": 10.0,
+      "explanation": "Your highest detected qualification (bachelor) meets or exceeds the bachelor level requested.",
+      "evidence": [
+        {
+          "required": "bachelor",
+          "detected": "bachelor"
+        }
+      ],
+      "recommendation": null,
+      "limitation": "Education is matched on qualification level only. Field of study, awarding institution, and equivalency are not assessed."
+    },
+    {
+      "category_key": "keyword_coverage",
+      "category_name": "Job-description keyword coverage",
+      "weight": 10.0,
+      "points_earned": 6.67,
+      "points_possible": 10.0,
+      "explanation": "Your resume contains 10 of the 25 most frequent non-skill terms in this posting (40%). Full marks are awarded at 60% rather than 100%, so that padding your resume with job-description vocabulary cannot inflate the score.",
+      "evidence": [
+        {
+          "present": [
+            "backend",
+            "developer",
+            "services",
+            "web",
+            "queries",
+            "deployment",
+            "rest",
+            "apis",
+            "unit",
+            "tests"
+          ],
+          "missing": [
+            "writing",
+            "platform",
+            "maintain",
+            "power",
+            "customer-facing",
+            "products",
+            "familiarity",
+            "containerised",
+            "designing",
+            "consuming",
+            "comfortable",
+            "code",
+            "review",
+            "workflows",
+            "bachelor"
+          ]
+        }
+      ],
+      "recommendation": "Where these terms genuinely describe your work, use the posting's wording: writing, platform, maintain, power, customer-facing, products, familiarity, containerised.",
+      "limitation": "Keyword coverage measures vocabulary overlap only. It cannot assess whether you used a term meaningfully, and copying words from the job description to raise this number will not make your resume stronger to a human reader."
+    },
+    {
+      "category_key": "resume_completeness",
+      "category_name": "Resume section completeness",
+      "weight": 10.0,
+      "points_earned": 9.75,
+      "points_possible": 10.0,
+      "explanation": "8 of 9 standard sections were detected. Sections are weighted by how much a reader relies on them; languages is reported but not scored, because its relevance varies too much by role.",
+      "evidence": [
+        {
+          "section": "contact",
+          "detected": true,
+          "points": 2.0,
+          "heading": null
+        },
+        {
+          "section": "summary",
+          "detected": true,
+          "points": 1.0,
+          "heading": "Professional Summary"
+        },
+        {
+          "section": "skills",
+          "detected": true,
+          "points": 2.0,
+          "heading": "Skills"
+        },
+        {
+          "section": "experience",
+          "detected": true,
+          "points": 2.0,
+          "heading": "Work Experience"
+        },
+        {
+          "section": "education",
+          "detected": true,
+          "points": 1.5,
+          "heading": "Education"
+        },
+        {
+          "section": "projects",
+          "detected": true,
+          "points": 1.0,
+          "heading": "Projects"
+        },
+        {
+          "section": "certifications",
+          "detected": true,
+          "points": 0.25,
+          "heading": "Certifications"
+        },
+        {
+          "section": "achievements",
+          "detected": false,
+          "points": 0.25,
+          "heading": null
+        },
+        {
+          "section": "languages",
+          "detected": true,
+          "points": 0.0,
+          "heading": "Languages"
+        }
+      ],
+      "recommendation": "Consider adding: achievements.",
+      "limitation": "Sections are detected from common headings and content patterns. An unconventional layout may cause a section you do have to be reported as missing."
+    },
+    {
+      "category_key": "measurable_achievements",
+      "category_name": "Measurable achievements",
+      "weight": 10.0,
+      "points_earned": 7.0,
+      "points_possible": 10.0,
+      "explanation": "4 of your 7 statements contain a measurable result such as a percentage, an amount, a count, or a time saved.",
+      "evidence": [
+        {
+          "measurable_statements": 4,
+          "total_statements": 7
+        }
+      ],
+      "recommendation": "Add outcomes to your strongest bullets. Use only figures you can substantiate — an invented number is worse than none.",
+      "limitation": "Numbers are detected by pattern. A quantified outcome written in words (\"halved the processing time\") may be missed, and a number that is not an achievement may occasionally be counted."
+    },
+    {
+      "category_key": "statement_quality",
+      "category_name": "Statement quality",
+      "weight": 5.0,
+      "points_earned": 3.5,
+      "points_possible": 5.0,
+      "explanation": "Statement quality starts at full marks; points are deducted for patterns that weaken a resume.",
+      "evidence": [
+        {
+          "reason": "3 statements use generic phrasing such as \"responsible for\"",
+          "points": -1.5
+        }
+      ],
+      "recommendation": "Rewrite the flagged statements to open with an action verb and to state what changed as a result of your work.",
+      "limitation": "Writing quality is assessed by pattern rules, not comprehension. Strong, unconventional writing may be flagged, and weak writing that follows the patterns may pass."
+    }
+  ],
+  "skills": {
+    "matched": [
+      {
+        "skill_name": "docker",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "exact",
+        "evidence_snippet": "…ices. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Ex…"
+      },
+      {
+        "skill_name": "git",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "exact",
+        "evidence_snippet": "…ills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience…"
+      },
+      {
+        "skill_name": "linux",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "exact",
+        "evidence_snippet": "…PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience Junior Backend Develope…"
+      },
+      {
+        "skill_name": "postgresql",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "exact",
+        "evidence_snippet": "…hon web services. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, L…"
+      },
+      {
+        "skill_name": "python",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "exact",
+        "evidence_snippet": "…hands-on experience building and maintaining Python web services. Skills Python, JavaScrip…"
+      },
+      {
+        "skill_name": "rest api",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "alias",
+        "evidence_snippet": "…Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience Juni…"
+      },
+      {
+        "skill_name": "unit testing",
+        "match_status": "matched",
+        "requirement_level": "required",
+        "matched_via": "alias",
+        "evidence_snippet": "…ease time from 2 hours to 20 minutes - Wrote unit tests with pytest, raising coverage from…"
+      }
+    ],
+    "partial": [
+      {
+        "skill_name": "code review",
+        "match_status": "partial",
+        "requirement_level": "required",
+        "matched_via": "related",
+        "evidence_snippet": "…ills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Experience…"
+      },
+      {
+        "skill_name": "sql",
+        "match_status": "partial",
+        "requirement_level": "required",
+        "matched_via": "related",
+        "evidence_snippet": "…hon web services. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, L…"
+      },
+      {
+        "skill_name": "kubernetes",
+        "match_status": "partial",
+        "requirement_level": "preferred",
+        "matched_via": "related",
+        "evidence_snippet": "…ices. Skills Python, JavaScript, PostgreSQL, Docker, Git, REST APIs, pytest, Linux Work Ex…"
+      }
+    ],
+    "missing": [
+      {
+        "skill_name": "agile",
+        "match_status": "missing",
+        "requirement_level": "preferred",
+        "matched_via": null,
+        "evidence_snippet": null
+      },
+      {
+        "skill_name": "caching",
+        "match_status": "missing",
+        "requirement_level": "preferred",
+        "matched_via": null,
+        "evidence_snippet": null
+      },
+      {
+        "skill_name": "incident response",
+        "match_status": "missing",
+        "requirement_level": "preferred",
+        "matched_via": null,
+        "evidence_snippet": null
+      },
+      {
+        "skill_name": "performance tuning",
+        "match_status": "missing",
+        "requirement_level": "preferred",
+        "matched_via": null,
+        "evidence_snippet": null
+      },
+      {
+        "skill_name": "redis",
+        "match_status": "missing",
+        "requirement_level": "preferred",
+        "matched_via": null,
+        "evidence_snippet": null
+      }
+    ]
+  },
+  "sections": [
+    {
+      "section_key": "contact",
+      "detected": true,
+      "matched_heading": null,
+      "note": "Found contact details."
+    },
+    {
+      "section_key": "summary",
+      "detected": true,
+      "matched_heading": "Professional Summary",
+      "note": "Found a professional summary."
+    },
+    {
+      "section_key": "skills",
+      "detected": true,
+      "matched_heading": "Skills",
+      "note": "Found a skills section."
+    },
+    {
+      "section_key": "experience",
+      "detected": true,
+      "matched_heading": "Work Experience",
+      "note": "Found a work experience section."
+    },
+    {
+      "section_key": "education",
+      "detected": true,
+      "matched_heading": "Education",
+      "note": "Found an education section."
+    },
+    {
+      "section_key": "projects",
+      "detected": true,
+      "matched_heading": "Projects",
+      "note": "Found a projects section."
+    },
+    {
+      "section_key": "certifications",
+      "detected": true,
+      "matched_heading": "Certifications",
+      "note": "Found certifications or training."
+    },
+    {
+      "section_key": "achievements",
+      "detected": false,
+      "matched_heading": null,
+      "note": "No achievements section detected. This is optional, but awards and recognition are worth listing."
+    },
+    {
+      "section_key": "languages",
+      "detected": true,
+      "matched_heading": "Languages",
+      "note": "Found a languages section."
+    }
+  ],
+  "statements": {
+    "total_bullets": 7,
+    "with_measurable_result": 4,
+    "action_verb_rate": 0.5714,
+    "findings": [
+      {
+        "statement_text": "Responsible for maintaining the company website",
+        "issue_codes": [
+          "NO_ACTION_VERB",
+          "NO_METRIC",
+          "GENERIC_PHRASING"
+        ],
+        "word_count": 6,
+        "has_measurable_result": false,
+        "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
+      },
+      {
+        "statement_text": "Worked on internal reporting tools",
+        "issue_codes": [
+          "NO_ACTION_VERB",
+          "NO_METRIC",
+          "GENERIC_PHRASING"
+        ],
+        "word_count": 5,
+        "has_measurable_result": false,
+        "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
+      },
+      {
+        "statement_text": "Helped with customer queries about the online ordering system",
+        "issue_codes": [
+          "NO_ACTION_VERB",
+          "NO_METRIC",
+          "GENERIC_PHRASING"
+        ],
+        "word_count": 9,
+        "has_measurable_result": false,
+        "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
+      }
+    ]
+  },
+  "job_analysis": {
+    "job_title": "Junior Backend Developer",
+    "company_name": "Fictional employer",
+    "min_years_experience": 2,
+    "required_education_level": "bachelor",
+    "requirement_split_inferred": false,
+    "required_skills": [
+      "code review",
+      "docker",
+      "git",
+      "linux",
+      "postgresql",
+      "python",
+      "rest api",
+      "sql",
+      "unit testing"
+    ],
+    "preferred_skills": [
+      "agile",
+      "caching",
+      "incident response",
+      "kubernetes",
+      "performance tuning",
+      "redis"
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "source": "rule",
+      "category": "skills",
+      "title": "Some skills matched only through a related technology",
+      "detail": "These matched indirectly: Code Review, SQL. If you have used the exact technology named in the posting, use that exact term so the match is unambiguous."
+    },
+    {
+      "priority": "medium",
+      "source": "rule",
+      "category": "statements",
+      "title": "Open more statements with an action verb",
+      "detail": "57% of your statements begin with an action verb. Starting with a verb such as \"Built\", \"Reduced\", or \"Automated\" puts your contribution first."
+    },
+    {
+      "priority": "medium",
+      "source": "rule",
+      "category": "statements",
+      "title": "Rewrite 3 statement(s) that describe duties rather than results",
+      "detail": "Phrases such as \"responsible for\" and \"worked on\" describe a job description, not your contribution. Replace them with what you did and what changed as a result."
+    },
+    {
+      "priority": "low",
+      "source": "rule",
+      "category": "skills",
+      "title": "Preferred skills you could develop",
+      "detail": "These are listed as preferred rather than required: Agile, Caching, Incident Response, Performance Optimisation, Redis. They are a reasonable target for study if you are pursuing similar roles."
+    }
+  ],
+  "ai_status": "unavailable",
+  "ai_reason_code": "not_configured",
+  "ai_message": "AI suggestions are not available right now. The analysis below is complete and was produced by ResumeIQ's rule-based engine."
+}

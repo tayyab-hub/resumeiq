@@ -1,0 +1,22 @@
+Junior Backend Developer
+
+We are hiring a Junior Backend Developer to join our platform team. You will build and
+maintain services that power our customer-facing products.
+
+Requirements:
+- 2+ years of experience building backend web services
+- Strong Python skills
+- Experience with PostgreSQL and writing SQL queries
+- Familiarity with Docker and containerised deployment
+- Experience designing and consuming REST APIs
+- Comfortable with Git and code review workflows
+- Working knowledge of Linux
+- Experience writing unit tests
+- Bachelor's degree in Computer Science or equivalent practical experience
+
+Nice to have:
+- Exposure to Kubernetes
+- Experience with Redis or another caching layer
+
+You will collaborate with product and design stakeholders in an agile environment,
+contribute to architecture discussions, and take part in incident response rotations.

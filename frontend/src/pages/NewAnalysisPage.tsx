@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +24,7 @@ export function NewAnalysisPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | undefined>();
   const [submitError, setSubmitError] = useState<ApiError | null>(null);
+  const submission = useRef<{ file: File; signature: string; key: string }>();
 
   const {
     register,
@@ -49,6 +50,7 @@ export function NewAnalysisPage() {
   });
 
   function onSubmit(values: NewAnalysisValues) {
+    if (mutation.isPending) return;
     const problem = validateResumeFile(file);
     if (problem || !file) {
       setFileError(problem ?? 'Select your resume as a PDF file');
@@ -57,7 +59,12 @@ export function NewAnalysisPage() {
 
     setFileError(undefined);
     setSubmitError(null);
+    const signature = JSON.stringify(values);
+    if (submission.current?.file !== file || submission.current.signature !== signature) {
+      submission.current = { file, signature, key: crypto.randomUUID() };
+    }
     mutation.mutate({
+      requestKey: submission.current.key,
       resume: file,
       jobDescription: values.job_description,
       jobTitle: values.job_title,
@@ -142,8 +149,9 @@ export function NewAnalysisPage() {
             />
 
             <Alert tone="info" title="What happens to your file">
-              Your PDF is read in memory and discarded as soon as the text is extracted. It is never
-              written to disk or stored in the database.
+              Your PDF may be buffered in temporary storage during upload and is removed after
+              processing. Results retain evidence snippets and flagged statements. Full extracted
+              text is saved only if you opt in.
             </Alert>
           </CardBody>
         </Card>

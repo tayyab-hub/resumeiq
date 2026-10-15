@@ -94,7 +94,10 @@ def detect_sections(text: str) -> tuple[SectionResult, ...]:
         for key, variants in headings.items():
             if key in found:
                 continue
-            if any(normalised == variant or normalised.startswith(variant + " ") for variant in variants):
+            if any(
+                normalised == variant or normalised.startswith(variant + " ")
+                for variant in variants
+            ):
                 found[key] = (line.strip().strip(":").strip(), line_start)
                 break
 

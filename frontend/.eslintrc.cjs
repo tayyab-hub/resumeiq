@@ -49,6 +49,7 @@ module.exports = {
     'no-console': ['error', { allow: ['warn', 'error'] }],
   },
   overrides: [
+    { files: ['scripts/*.mjs'], env: { node: true }, rules: { 'no-console': 'off' } },
     {
       files: ['tests/**/*.{ts,tsx}'],
       env: { node: true },

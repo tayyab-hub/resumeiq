@@ -169,8 +169,9 @@ export function ProfilePage() {
         <CardHeader title="Your data" />
         <CardBody className="space-y-3 text-sm leading-relaxed text-ink-600">
           <p>
-            <span className="font-medium text-ink-900">Your resume file is never stored.</span> It
-            is read in memory to extract the text, then discarded before the response is sent.
+            <span className="font-medium text-ink-900">Your PDF is not saved permanently.</span> It
+            may use temporary upload storage, which is removed after processing. Results retain
+            evidence snippets.
           </p>
           <p>
             The extracted text is not stored either, unless you tick the opt-in box when running an

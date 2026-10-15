@@ -18,6 +18,8 @@ _HAS_DIGIT = re.compile(r"\d")
 
 
 def validate_password(value: str) -> str:
+    if len(value.encode("utf-8")) > 72:
+        raise ValueError("Password must be at most 72 UTF-8 bytes")
     if len(value) < PASSWORD_MIN_LENGTH:
         raise ValueError(f"Password must be at least {PASSWORD_MIN_LENGTH} characters long")
     if not _HAS_LETTER.search(value):
@@ -100,5 +102,5 @@ class DeleteAccountRequest(BaseModel):
     @classmethod
     def _must_confirm(cls, value: str) -> str:
         if value.strip().upper() != "DELETE":
-            raise ValueError('Type DELETE to confirm account removal')
+            raise ValueError("Type DELETE to confirm account removal")
         return value

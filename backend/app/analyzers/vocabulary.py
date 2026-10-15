@@ -98,10 +98,7 @@ def stopwords() -> frozenset[str]:
 
 @lru_cache(maxsize=1)
 def section_headings() -> dict[str, tuple[str, ...]]:
-    return {
-        key: tuple(values)
-        for key, values in _language_data()["section_headings"].items()
-    }
+    return {key: tuple(values) for key, values in _language_data()["section_headings"].items()}
 
 
 @lru_cache(maxsize=1)

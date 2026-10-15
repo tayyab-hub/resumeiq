@@ -1,0 +1,36 @@
+# Configuration template only. Reuse the existing ResumeIQ service; verify the
+# workspace's billing method and quotas before applying anything to Render.
+services:
+  - type: web
+    name: resumeiq-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: codex/resumeiq-portfolio-release
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: off
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: 'false'
+      - key: AI_ENABLED_OPT_IN
+        value: 'false'
+      - key: AI_API_KEY
+        value: ''
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: EXPECTED_DATABASE_HOST
+        sync: false
+      - key: EXPECTED_DATABASE_NAME
+        sync: false
+      - key: ALLOW_EMPTY_DATABASE_BOOTSTRAP
+        value: 'false'

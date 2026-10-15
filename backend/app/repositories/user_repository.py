@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.models.user import RefreshToken, User
@@ -18,9 +18,7 @@ def normalise_email(email: str) -> str:
 
 
 def get_by_email(db: Session, email: str) -> User | None:
-    return db.execute(
-        select(User).where(User.email == normalise_email(email))
-    ).scalar_one_or_none()
+    return db.execute(select(User).where(User.email == normalise_email(email))).scalar_one_or_none()
 
 
 def get_by_id(db: Session, user_id: uuid.UUID) -> User | None:
@@ -68,6 +66,27 @@ def find_active_refresh_token(db: Session, token_hash: str) -> RefreshToken | No
     return token
 
 
+def consume_refresh_token(db: Session, token_hash: str) -> uuid.UUID | None:
+    """Exactly one concurrent redemption can revoke and return this token."""
+    owner_id = db.scalar(select(RefreshToken.user_id).where(RefreshToken.token_hash == token_hash))
+    if owner_id is None:
+        return None
+    # Password changes and token issuance share this user-row lock.
+    db.execute(select(User).where(User.id == owner_id).with_for_update())
+    now = datetime.now(UTC)
+    user_id = db.execute(
+        update(RefreshToken)
+        .where(
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.revoked_at.is_(None),
+            RefreshToken.expires_at > now,
+        )
+        .values(revoked_at=now)
+        .returning(RefreshToken.user_id)
+    ).scalar_one_or_none()
+    return user_id
+
+
 def revoke_refresh_token(db: Session, token_hash: str) -> None:
     token = db.execute(
         select(RefreshToken).where(RefreshToken.token_hash == token_hash)
@@ -80,11 +99,15 @@ def revoke_refresh_token(db: Session, token_hash: str) -> None:
 def revoke_all_for_user(db: Session, user_id: uuid.UUID) -> None:
     """Used after a password change: every existing session must end."""
     now = datetime.now(UTC)
-    tokens = db.execute(
-        select(RefreshToken).where(
-            RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None)
+    tokens = (
+        db.execute(
+            select(RefreshToken).where(
+                RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for token in tokens:
         token.revoked_at = now
     db.commit()
@@ -97,4 +120,4 @@ def prune_expired_tokens(db: Session, user_id: uuid.UUID) -> None:
             RefreshToken.expires_at < datetime.now(UTC),
         )
     )
-    db.commit()
+    # Committed together with the replacement token by store_refresh_token.

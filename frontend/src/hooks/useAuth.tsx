@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { authApi } from '@/api/auth';
-import { setSessionLostHandler } from '@/api/client';
+import { restoreSession, setSessionLostHandler } from '@/api/client';
 import { AuthContext, type AuthContextValue } from '@/hooks/authContext';
 import { clearAccessToken, setAccessToken } from '@/services/tokenStore';
 import type { User } from '@/types';
@@ -22,10 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    authApi
-      .refresh()
+    restoreSession()
       .then((response) => {
-        if (cancelled) return;
+        if (cancelled || !response) return;
         setAccessToken(response.access_token);
         setUserState(response.user);
       })

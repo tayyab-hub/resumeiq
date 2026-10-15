@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.api.v1.auth import REFRESH_COOKIE_NAME, REFRESH_COOKIE_PATH
+from app.api.v1.auth import _clear_refresh_cookie
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.auth import (
@@ -42,9 +42,10 @@ def change_password(
     auth_service.change_password(
         db, current_user, current=payload.current_password, new=payload.new_password
     )
-    # Every session ends, including this one.
-    response.delete_cookie(key=REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    # The session version also invalidates previously issued access tokens.
+    _clear_refresh_cookie(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
@@ -56,5 +57,6 @@ def delete_account(
 ) -> Response:
     """Hard delete. Cascades remove every analysis and all of its child rows."""
     auth_service.delete_account(db, current_user, password=payload.password)
-    response.delete_cookie(key=REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    _clear_refresh_cookie(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response

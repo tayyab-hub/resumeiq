@@ -14,10 +14,29 @@ from datetime import UTC, datetime
 from typing import Any
 
 _RESERVED = {
-    "args", "asctime", "created", "exc_info", "exc_text", "filename", "funcName",
-    "levelname", "levelno", "lineno", "module", "msecs", "message", "msg", "name",
-    "pathname", "process", "processName", "relativeCreated", "stack_info",
-    "thread", "threadName", "taskName",
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "module",
+    "msecs",
+    "message",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "thread",
+    "threadName",
+    "taskName",
 }
 
 
@@ -33,9 +52,7 @@ class JsonFormatter(logging.Formatter):
             if key not in _RESERVED and not key.startswith("_"):
                 payload[key] = value
         if record.exc_info:
-            # The traceback is written to the server log only. It is never
-            # placed in an HTTP response body.
-            payload["exception"] = self.formatException(record.exc_info)
+            payload["error_type"] = record.exc_info[0].__name__ if record.exc_info[0] else "unknown"
         return json.dumps(payload, default=str)
 
 

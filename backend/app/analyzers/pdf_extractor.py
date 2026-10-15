@@ -1,76 +1,104 @@
-"""PDF validation and text extraction.
+"""PDF extraction isolated in a killable, resource-limited child process.
 
-Validation order is deliberate: cheapest and most decisive first. The magic-byte
-check is authoritative, because it is the only one an attacker cannot forge by
-renaming a file or setting a header.
+The multipart framework may spool uploads to temporary disk before this layer.
+No original file is deliberately persisted. Magic bytes are only a format hint.
 """
 
 from __future__ import annotations
 
+import json
+import os
+import subprocess
+import sys
+import threading
+
 from app.analyzers.text_utils import meaningful_character_count, normalise_text
+from app.core.config import settings
 from app.core.error_codes import (
     RESUME_CORRUPT,
     RESUME_EMPTY,
     RESUME_ENCRYPTED,
     RESUME_INVALID_TYPE,
     RESUME_NO_TEXT_LAYER,
+    RESUME_TOO_LARGE,
+    ErrorSpec,
 )
 from app.core.exceptions import ExtractionError
 
 PDF_MAGIC = b"%PDF-"
+RESOURCE_LIMIT = ErrorSpec(
+    "RESUME_RESOURCE_LIMIT",
+    422,
+    "This PDF is too complex to analyse safely.",
+    "PDFs are limited to 10 pages, 100,000 extracted characters and 10 seconds of processing.",
+    "Export a shorter, simpler text PDF and retry.",
+)
+EXTRACTION_BUSY = ErrorSpec(
+    "EXTRACTION_BUSY",
+    503,
+    "Another PDF is being processed.",
+    "The demo processes one PDF at a time to stay within its memory budget.",
+    "Wait a few seconds and retry.",
+)
+_slot = threading.BoundedSemaphore(1)
 
 
 def validate_pdf_bytes(data: bytes) -> None:
-    """Raise if the payload is not a usable PDF. Never returns a value."""
     if not data:
         raise ExtractionError(RESUME_EMPTY)
+    if len(data) > settings.max_upload_bytes:
+        raise ExtractionError(RESUME_TOO_LARGE)
     if not data.startswith(PDF_MAGIC):
         raise ExtractionError(RESUME_INVALID_TYPE)
 
 
 def extract_text(data: bytes, min_chars: int = 200) -> str:
-    """Return normalised text from an in-memory PDF.
-
-    The bytes are opened from memory: nothing is written to disk at any point,
-    so there is no temporary file to leak or forget to delete.
-    """
     validate_pdf_bytes(data)
-
-    try:
-        import fitz  # PyMuPDF
-    except ImportError as exc:  # pragma: no cover - dependency is required
-        raise ExtractionError(RESUME_CORRUPT) from exc
-
-    document = None
+    if not _slot.acquire(blocking=False):
+        raise ExtractionError(EXTRACTION_BUSY)
     try:
         try:
-            document = fitz.open(stream=data, filetype="pdf")
-        except Exception as exc:
-            # Any failure to open is reported as a damaged file. The underlying
-            # library message is never surfaced to the client.
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "app.analyzers.pdf_worker",
+                    str(settings.pdf_max_pages),
+                    str(settings.pdf_max_text_chars),
+                    str(settings.pdf_memory_mb),
+                    str(int(settings.pdf_timeout_seconds) + 1),
+                ],
+                input=data,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=settings.pdf_timeout_seconds,
+                check=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                env={
+                    key: value
+                    for key, value in os.environ.items()
+                    if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "LANG"}
+                },
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ExtractionError(RESOURCE_LIMIT) from exc
+        if result.returncode or len(result.stdout) > settings.pdf_max_text_chars * 6 + 1024:
+            raise ExtractionError(RESOURCE_LIMIT)
+        try:
+            payload = json.loads(result.stdout)
+        except (ValueError, UnicodeError) as exc:
             raise ExtractionError(RESUME_CORRUPT) from exc
-
-        if document.needs_pass:
-            raise ExtractionError(RESUME_ENCRYPTED)
-
-        if document.page_count == 0:
-            raise ExtractionError(RESUME_CORRUPT)
-
-        pages: list[str] = []
-        for page in document:
-            try:
-                pages.append(page.get_text("text"))
-            except Exception:  # noqa: BLE001 - a bad page should not lose the document
-                continue
-
-        text = normalise_text("\n".join(pages))
+        error = payload.get("error")
+        if error:
+            raise ExtractionError(
+                {
+                    "encrypted": RESUME_ENCRYPTED,
+                    "limit": RESOURCE_LIMIT,
+                }.get(error, RESUME_CORRUPT)
+            )
+        text = normalise_text(payload["text"])
+        if meaningful_character_count(text) < min_chars:
+            raise ExtractionError(RESUME_NO_TEXT_LAYER)
+        return text
     finally:
-        if document is not None:
-            document.close()
-
-    if meaningful_character_count(text) < min_chars:
-        # A scan is a specific, fixable situation. Reporting it as a generic
-        # failure would leave the user with nothing to act on.
-        raise ExtractionError(RESUME_NO_TEXT_LAYER)
-
-    return text
+        _slot.release()

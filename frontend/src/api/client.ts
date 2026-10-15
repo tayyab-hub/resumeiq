@@ -2,11 +2,11 @@ import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig 
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/services/tokenStore';
 import type { ApiErrorBody, TokenResponse } from '@/types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  // Required for the httpOnly refresh cookie to be sent cross-origin.
+  // Same-origin proxy keeps the refresh cookie on the website's host.
   withCredentials: true,
   timeout: 60_000,
 });
@@ -60,7 +60,7 @@ const NETWORK_ERROR = new ApiError({
   what: 'We could not reach the server.',
   why: 'Your connection may have dropped, or the service may be starting up.',
   nextStep:
-    'Check your internet connection and try again. Free hosting tiers sleep when idle, so the first request can take up to 30 seconds.',
+    'Check your connection. The free demo may take a minute or more to wake. Check History before retrying an analysis.',
   status: 0,
 });
 
@@ -68,7 +68,7 @@ const TIMEOUT_ERROR = new ApiError({
   code: 'TIMEOUT',
   what: 'The request took too long.',
   why: 'The server may be waking up, or the analysis may be unusually large.',
-  nextStep: 'Wait a few seconds and try again.',
+  nextStep: 'Check History before retrying an analysis: the server may already have saved it.',
   status: 0,
 });
 
@@ -118,20 +118,23 @@ export function toApiError(error: unknown): ApiError {
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
 
-let refreshInFlight: Promise<string | null> | null = null;
+let refreshInFlight: Promise<TokenResponse | null> | null = null;
 let onSessionLost: (() => void) | null = null;
 
 export function setSessionLostHandler(handler: (() => void) | null): void {
   onSessionLost = handler;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+export async function restoreSession(): Promise<TokenResponse | null> {
   // Concurrent 401s must trigger one refresh, not one per request.
   refreshInFlight ??= axios
-    .post<TokenResponse>(`${BASE_URL}/auth/refresh`, null, { withCredentials: true })
+    .post<TokenResponse>(`${BASE_URL}/auth/refresh`, null, {
+      withCredentials: true,
+      timeout: 120_000,
+    })
     .then((response) => {
       setAccessToken(response.data.access_token);
-      return response.data.access_token;
+      return response.data;
     })
     .catch(() => {
       clearAccessToken();
@@ -142,6 +145,10 @@ async function refreshAccessToken(): Promise<string | null> {
     });
 
   return refreshInFlight;
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  return (await restoreSession())?.access_token ?? null;
 }
 
 apiClient.interceptors.response.use(

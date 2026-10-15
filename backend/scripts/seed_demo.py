@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.analyzers.jd_parser import parse_job_description
 from app.analyzers.resume_analyzer import build_resume_profile
 from app.analyzers.scorer import compute_score
+from app.core.config import settings
 from app.database.session import SessionLocal
 from app.repositories import user_repository as users
 from app.security.password import hash_password
@@ -193,4 +194,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if settings.is_production:
+        raise SystemExit("Shared demo accounts are disabled in production; use /sample.")
     sys.exit(main())

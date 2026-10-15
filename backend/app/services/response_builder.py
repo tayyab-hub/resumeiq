@@ -23,6 +23,19 @@ _PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 def to_detail(analysis: Analysis) -> AnalysisDetailOut:
     matches = [SkillMatchOut.model_validate(match) for match in analysis.skill_matches]
     job = analysis.job_description
+    warnings = []
+    if not matches:
+        warnings.append(
+            "Insufficient recognised job-skill evidence: interpret this as a resume-quality rubric, not a reliable job-match estimate."
+        )
+    if not analysis.statements_total:
+        warnings.append(
+            "No readable bullet statements were detected. Statement quality is not assessed."
+        )
+    if job and job.requirement_split_inferred:
+        warnings.append(
+            "Required/preferred headings were not detected; recognised skills were treated as required."
+        )
 
     findings = [
         StatementFindingOut.model_validate(finding) for finding in analysis.statement_findings
@@ -40,6 +53,7 @@ def to_detail(analysis: Analysis) -> AnalysisDetailOut:
         created_at=analysis.created_at,
         overall_score=analysis.overall_score,
         disclaimer=DISCLAIMER,
+        evidence_warnings=warnings,
         score_breakdown=[
             ScoreCategoryOut(
                 category_key=category.category_key,

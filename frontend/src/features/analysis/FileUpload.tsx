@@ -117,7 +117,8 @@ export function FileUpload({ file, onChange, error }: FileUploadProps) {
       </div>
 
       <p id="resume-input-hint" className="text-xs text-ink-500">
-        Your file is analysed in memory and never saved. Only the analysis results are stored.
+        Up to 5 MB and 10 pages. Temporary upload buffers are removed after processing. Results
+        retain short evidence excerpts.
       </p>
 
       {message && (

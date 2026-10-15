@@ -30,9 +30,7 @@ class TestRegistration:
 
     def test_password_is_hashed_in_the_database(self, client: TestClient, db_session):
         client.post("/api/v1/auth/register", json=VALID)
-        user = db_session.execute(
-            select(User).where(User.email == "ada@example.com")
-        ).scalar_one()
+        user = db_session.execute(select(User).where(User.email == "ada@example.com")).scalar_one()
         assert user.password_hash != VALID["password"]
         assert VALID["password"] not in user.password_hash
         assert user.password_hash.startswith("$2")
@@ -44,9 +42,7 @@ class TestRegistration:
         assert response.json()["error"]["code"] == "EMAIL_UNAVAILABLE"
         assert "already" not in response.json()["error"]["what"].lower()
 
-    def test_email_is_normalised_so_case_does_not_create_a_second_account(
-        self, client: TestClient
-    ):
+    def test_email_is_normalised_so_case_does_not_create_a_second_account(self, client: TestClient):
         client.post("/api/v1/auth/register", json={**VALID, "email": "Ada@Example.COM"})
         login = client.post(
             "/api/v1/auth/login", json={"email": "ada@example.com", "password": VALID["password"]}
@@ -64,9 +60,7 @@ class TestRegistration:
         assert "password" in response.json()["error"]["fields"]
 
     def test_validation_errors_name_the_field(self, client: TestClient):
-        response = client.post(
-            "/api/v1/auth/register", json={**VALID, "email": "not-an-email"}
-        )
+        response = client.post("/api/v1/auth/register", json={**VALID, "email": "not-an-email"})
         assert response.status_code == 422
         assert "email" in response.json()["error"]["fields"]
 
@@ -151,7 +145,11 @@ class TestProtectedRoutes:
         assert response.json()["error"]["code"] == "TOKEN_INVALID"
 
     def test_malformed_authorization_header_is_rejected(self, client: TestClient):
-        for header in ({"Authorization": "Basic abc"}, {"Authorization": "Bearer"}, {"Authorization": ""}):
+        for header in (
+            {"Authorization": "Basic abc"},
+            {"Authorization": "Bearer"},
+            {"Authorization": ""},
+        ):
             assert client.get("/api/v1/auth/me", headers=header).status_code == 401
 
 
@@ -192,10 +190,12 @@ class TestRateLimiting:
         assert blocked.json()["error"]["code"] == "TOO_MANY_ATTEMPTS"
         assert blocked.headers.get("Retry-After")
 
-    def test_a_successful_login_clears_the_counter(self, client: TestClient):
+    def test_successful_login_does_not_reset_abuse_budget(self, client: TestClient):
         client.post("/api/v1/auth/register", json=VALID)
         for _ in range(settings.login_max_attempts - 1):
-            client.post("/api/v1/auth/login", json={"email": VALID["email"], "password": "nope 12345"})
+            client.post(
+                "/api/v1/auth/login", json={"email": VALID["email"], "password": "nope 12345"}
+            )
 
         good = client.post(
             "/api/v1/auth/login", json={"email": VALID["email"], "password": VALID["password"]}
@@ -204,7 +204,7 @@ class TestRateLimiting:
         again = client.post(
             "/api/v1/auth/login", json={"email": VALID["email"], "password": "nope 12345"}
         )
-        assert again.status_code == 401  # not 429
+        assert again.status_code == 429  # success cannot reset the shared abuse budget
 
 
 class TestAccountManagement:
@@ -276,13 +276,9 @@ class TestResponseHeaders:
         assert body["database"] == "ok"
 
     def test_a_disallowed_origin_gets_no_allow_header(self, client: TestClient):
-        response = client.get(
-            "/api/v1/health", headers={"Origin": "https://evil.example"}
-        )
+        response = client.get("/api/v1/health", headers={"Origin": "https://evil.example"})
         assert "access-control-allow-origin" not in {k.lower() for k in response.headers}
 
     def test_an_allowed_origin_is_accepted(self, client: TestClient):
-        response = client.get(
-            "/api/v1/health", headers={"Origin": "http://localhost:5173"}
-        )
+        response = client.get("/api/v1/health", headers={"Origin": "http://localhost:5173"})
         assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"

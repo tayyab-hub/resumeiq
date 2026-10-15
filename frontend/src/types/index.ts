@@ -112,6 +112,7 @@ export interface AnalysisDetail {
   created_at: string;
   overall_score: number;
   disclaimer: string;
+  evidence_warnings?: string[];
   score_breakdown: ScoreCategory[];
   skills: {
     matched: SkillMatch[];

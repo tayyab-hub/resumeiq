@@ -67,7 +67,7 @@ export function LoginPage() {
               type="submit"
               className="w-full"
               isLoading={isSubmitting}
-              loadingLabel="Signing inâ€¦"
+              loadingLabel="Signing in…"
             >
               Sign in
             </Button>

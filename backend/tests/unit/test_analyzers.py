@@ -109,9 +109,7 @@ class TestPdfExtraction:
         for payload in (b"", b"MZ\x90", b"%PDF-1.7 broken"):
             with pytest.raises(ExtractionError) as exc:
                 extract_text(payload)
-            combined = " ".join(
-                [exc.value.spec.what, exc.value.spec.why, exc.value.spec.next_step]
-            )
+            combined = " ".join([exc.value.spec.what, exc.value.spec.why, exc.value.spec.next_step])
             assert ".py" not in combined
             assert "Traceback" not in combined
             assert "fitz" not in combined.lower()

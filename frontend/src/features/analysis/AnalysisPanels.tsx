@@ -258,6 +258,7 @@ export function LimitationsNotice() {
             Skills are matched lexically against a curated list, so unusual wording is missed.
           </li>
           <li>It cannot verify that anything on your resume is true.</li>
+          <li>A skill not detected in your resume is not necessarily a skill you lack.</li>
           <li>It does not predict whether you will be shortlisted or hired.</li>
           <li>It is not a replacement for a recruiter or a careers adviser.</li>
         </ul>

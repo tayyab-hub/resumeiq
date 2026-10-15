@@ -179,9 +179,9 @@ describe('FileUpload', () => {
     expect(onChange).toHaveBeenCalledWith(null);
   });
 
-  it('tells the user their file is not stored', () => {
+  it('discloses temporary upload storage and retained evidence excerpts', () => {
     render(<FileUpload file={null} onChange={vi.fn()} />);
-    expect(screen.getByText(/never saved/i)).toBeInTheDocument();
+    expect(screen.getByText(/Temporary upload buffers are removed after processing/i)).toHaveTextContent(/retain short evidence excerpts/i);
   });
 });
 
