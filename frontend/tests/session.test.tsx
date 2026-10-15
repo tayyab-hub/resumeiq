@@ -7,7 +7,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { AuthProvider } from '@/hooks/useAuth';
 import { useAuth } from '@/hooks/authContext';
 import { authApi } from '@/api/auth';
-import { apiClient, setSessionLostHandler } from '@/api/client';
+import { apiClient, restoreSession, setSessionLostHandler } from '@/api/client';
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/services/tokenStore';
 import type { TokenResponse, User } from '@/types';
 import { ProfilePage } from '@/pages/ProfilePage';
@@ -129,6 +129,74 @@ function rejectWith(code: string, config: InternalAxiosRequestConfig) {
 }
 
 describe('Session rejection handling', () => {
+  it.each(['success', 'failure'])(
+    'ignores a late refresh %s after the account changes',
+    async (outcome) => {
+      setAccessToken('fictional-old-account');
+      let resolveRefresh!: (value: unknown) => void;
+      let rejectRefresh!: (reason: Error) => void;
+      const post = vi.spyOn(axios, 'post').mockImplementation(
+        () =>
+          new Promise((resolve, reject) => {
+            resolveRefresh = resolve;
+            rejectRefresh = reject;
+          }),
+      );
+      const pending = restoreSession();
+      clearAccessToken();
+      expect(post.mock.calls[0]?.[2]?.signal?.aborted).toBe(true);
+      setAccessToken('fictional-new-account');
+      if (outcome === 'success') resolveRefresh({ data: token(userA) });
+      else rejectRefresh(new Error('Late old-session failure'));
+      expect(await pending).toBeNull();
+      expect(getAccessToken()).toBe('fictional-new-account');
+    },
+  );
+  it('does not sign out a new account when an earlier request is rejected late', async () => {
+    setAccessToken('fictional-old-account');
+    let rejectOld!: () => void;
+    const lost = vi.fn();
+    setSessionLostHandler(lost);
+    apiClient.defaults.adapter = (config) =>
+      new Promise((_, reject) => {
+        rejectOld = () => void rejectWith('TOKEN_INVALID', config).catch(reject);
+      });
+    const pending = apiClient.get('/analyses');
+    const rejection = expect(pending).rejects.toMatchObject({ status: 401 });
+    await waitFor(() => expect(rejectOld).toBeDefined());
+    clearAccessToken();
+    setAccessToken('fictional-new-account');
+    rejectOld();
+    await rejection;
+    expect(getAccessToken()).toBe('fictional-new-account');
+    expect(lost).not.toHaveBeenCalled();
+  });
+  it('does not replay an old protected request after account change during renewal', async () => {
+    setAccessToken('fictional-old-account');
+    let finish!: (value: unknown) => void;
+    const post = vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const lost = vi.fn();
+    setSessionLostHandler(lost);
+    const adapter = vi.fn((config: InternalAxiosRequestConfig) =>
+      rejectWith('TOKEN_EXPIRED', config),
+    );
+    apiClient.defaults.adapter = adapter;
+    const pending = apiClient.get('/analyses');
+    const rejection = expect(pending).rejects.toMatchObject({ status: 401 });
+    await waitFor(() => expect(post).toHaveBeenCalledOnce());
+    clearAccessToken();
+    setAccessToken('fictional-new-account');
+    finish({ data: token(userA) });
+    await rejection;
+    expect(adapter).toHaveBeenCalledOnce();
+    expect(lost).not.toHaveBeenCalled();
+    expect(getAccessToken()).toBe('fictional-new-account');
+  });
   it('clears a revoked access token and the signed-in UI', async () => {
     setAccessToken('fictional-revoked');
     const lost = vi.fn();

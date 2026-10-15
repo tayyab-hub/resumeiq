@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const response = await authApi.login({ email, password });
       queryClient.clear();
+      clearAccessToken();
       setAccessToken(response.access_token);
       setUserState(response.user);
     },
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (fullName: string, email: string, password: string) => {
       const response = await authApi.register({ full_name: fullName, email, password });
       queryClient.clear();
+      clearAccessToken();
       setAccessToken(response.access_token);
       setUserState(response.user);
     },

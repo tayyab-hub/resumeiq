@@ -1,8 +1,18 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/services/tokenStore';
+import {
+  clearAccessToken,
+  getAccessToken,
+  getSessionGeneration,
+  onTokenChange,
+  setAccessToken,
+} from '@/services/tokenStore';
 import type { ApiErrorBody, TokenResponse } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+type RetriableConfig = InternalAxiosRequestConfig & {
+  _retried?: boolean;
+  _sessionGeneration?: number;
+};
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -12,6 +22,7 @@ export const apiClient: AxiosInstance = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  (config as RetriableConfig)._sessionGeneration = getSessionGeneration();
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -113,35 +124,45 @@ export function toApiError(error: unknown): ApiError {
 
 // --- Silent refresh --------------------------------------------------------
 // A 401 with code TOKEN_EXPIRED is recoverable: swap the expired access token
-// for a new one using the refresh cookie and replay the original request. Any
-// other 401 means the session is genuinely over.
-
-type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
+// for a new one using the refresh cookie and replay the original request.
+// Revoked/missing access ends the session; password-confirmation errors do not.
 
 let refreshInFlight: Promise<TokenResponse | null> | null = null;
+let refreshController: AbortController | null = null;
 let onSessionLost: (() => void) | null = null;
+
+onTokenChange((token) => {
+  // Also stop the browser accepting a late old-session Set-Cookie response.
+  if (token === null) refreshController?.abort();
+});
 
 export function setSessionLostHandler(handler: (() => void) | null): void {
   onSessionLost = handler;
 }
 
 export async function restoreSession(): Promise<TokenResponse | null> {
+  const generation = getSessionGeneration();
+  if (!refreshInFlight) refreshController = new AbortController();
   // Concurrent 401s must trigger one refresh, not one per request.
   refreshInFlight ??= axios
     .post<TokenResponse>(`${BASE_URL}/auth/refresh`, null, {
       withCredentials: true,
       timeout: 120_000,
+      signal: refreshController?.signal,
     })
     .then((response) => {
+      // A late response from a previous account must not replace a new login.
+      if (generation !== getSessionGeneration()) return null;
       setAccessToken(response.data.access_token);
       return response.data;
     })
     .catch(() => {
-      clearAccessToken();
+      if (generation === getSessionGeneration()) setAccessToken(null);
       return null;
     })
     .finally(() => {
       refreshInFlight = null;
+      refreshController = null;
     });
 
   return refreshInFlight;
@@ -155,6 +176,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
     const config = error.config as RetriableConfig | undefined;
+    const belongsToCurrentSession = () =>
+      config?._sessionGeneration === undefined ||
+      config._sessionGeneration === getSessionGeneration();
+    if (!belongsToCurrentSession()) return Promise.reject(toApiError(error));
     const code = error.response?.data?.error?.code;
     const isRefreshCall = config?.url?.includes('/auth/refresh');
 
@@ -167,6 +192,7 @@ apiClient.interceptors.response.use(
     ) {
       config._retried = true;
       const token = await refreshAccessToken();
+      if (!belongsToCurrentSession()) return Promise.reject(toApiError(error));
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
         return apiClient.request(config);
