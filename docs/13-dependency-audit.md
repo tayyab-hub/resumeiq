@@ -46,3 +46,9 @@ The saved baseline audit contained 18 advisory entries across three packages, in
 PyJWT is directly used for authentication; explicit algorithm/expiry/type validation and session-version checks are tested. The baseline advisories were treated as applicable dependency risk rather than presumed exploitable, and the current release was verified by full authentication tests. pip and pytest operate during installation/testing; neither exposes an application route. Hash-locked production/development requirements and Linux Docker/CI installs verify compatibility.
 
 Residual risk: audit databases evolve, zero reported findings do not prove safety, and parser/logic defects can exist without advisories. No exception or ignored advisory is configured.
+
+## Final verification refresh — 15 October 2026
+
+Fresh installed-environment `pip-audit`, all-dependency `npm audit`, and `npm audit --omit=dev` each returned zero known findings. No package version or audit exception changed in this final pass. The frontend suite now has 62 passing tests, including session revocation, password-change navigation and account-cache isolation with an in-flight old query.
+
+Recharts is installed at **2.15.4** with React **18.3.1**. Its npm deprecation metadata says the 1.x/2.x branches are inactive and directs users to the [official v3 migration guide](https://github.com/recharts/recharts/wiki/3.0-migration-guide). This is an acknowledged maintenance risk, not a current audit vulnerability or a demonstrated rendering failure. A v3 migration has API/behavior changes and needs dedicated chart, tooltip and accessibility checks. It is deferred from this release; the deprecation warning is not suppressed. Reassess promptly if an applicable advisory or compatibility failure appears.

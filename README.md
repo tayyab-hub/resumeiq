@@ -25,6 +25,8 @@ For the full workflow, create a disposable account, upload [fictional-resume.pdf
 
 This portfolio tool does not reproduce an employer's ATS algorithm, predict hiring, verify qualifications or assess a person's suitability for employment. “Not detected” does not mean “does not possess.”
 
+The engineering work spans an inspectable scoring pipeline, bounded PDF processing, relational ownership and deletion, rotating sessions, browser cache isolation, PostgreSQL integration tests and a verified deployment across three services. The release evidence links these implementation choices to actual tests and their limits.
+
 ## Scoring you can inspect
 
 | Category | Base points |
@@ -101,7 +103,7 @@ npm audit --audit-level=moderate
 python scripts/scan_secrets.py --history
 ```
 
-On 15 October 2026, local checks measured **266 backend passes, one PostgreSQL-only skip**, **52 frontend passes**, and **91.79% coverage** of `app/analyzers`, `app/services` and `app/security`. This is not whole-application coverage. The PDF subprocess is integration-tested but not coverage-instrumented. Current PostgreSQL/container/CI results are recorded separately in [release readiness](docs/10-release-readiness.md). Python and npm audits reported no known vulnerabilities at that check; this is dated evidence, not a security guarantee.
+On 15 October 2026, local checks measured **266 backend passes, one PostgreSQL-only skip**, **62 frontend passes**, and **91.79% coverage** of `app/analyzers`, `app/services` and `app/security`. This is not whole-application coverage. The PDF subprocess is integration-tested but not coverage-instrumented. Current PostgreSQL/container/CI results are recorded separately in [release readiness](docs/10-release-readiness.md). Python and npm audits reported no known vulnerabilities at that check; this is dated evidence, not a security guarantee.
 
 ## Privacy and security
 

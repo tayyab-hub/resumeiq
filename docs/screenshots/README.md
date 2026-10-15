@@ -17,3 +17,5 @@ Captured on 15 October 2026 from the functioning public ResumeIQ website at http
 | [history-desktop.jpg](history-desktop.jpg) | Saved report in the account's history |
 
 Desktop captures use the browser's normal viewport. Mobile/tablet document widths were 375/753 CSS pixels inside 390/768 viewports respectively, with no horizontal document overflow. No provider credentials or real resume data appear in these files. The temporary accounts/reports used for verification are disposable and are removed after testing.
+
+Final verification: all eleven JPEGs decoded successfully and were visually reviewed against the hosted interface. They remain genuine captures of the earlier fictional workflow; no image was regenerated. The final changes affect session transitions and mobile History scrolling, without changing these captured desktop/sample/report layouts. Live responsive checks and the corrected mobile History measurements are in [release readiness](../10-release-readiness.md).

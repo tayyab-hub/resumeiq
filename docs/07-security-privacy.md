@@ -53,3 +53,13 @@ Application deletion is not a promise of immediate erasure from provider backups
 No email verification/recovery, MFA, distributed throttling, antivirus scan or external penetration test. Restart resets quotas; shared proxy-peer quotas can also deny legitimate users. Public signup can exhaust free resources. Live cookie, persistence, deletion and provider billing checks are recorded separately from local/CI tests. Neon displayed a six-hour restore window; application deletion cannot promise immediate erasure from provider backups. Login throttling was observed live: HTTP 429 and Retry-After after the shared peer exhausted five attempts in 15 minutes.
 
 The custom secret scanner checks known key formats, private-key markers, credential URL patterns and tracked `.env` files across tracked files/history. The historical `pass` documentation placeholder was inspected before a narrow exemption; other explicit test/documentation passwords are also recognized. This cannot establish the absence of every possible secret.
+
+## Final browser session review
+
+The final verification found that TanStack Query's account-independent keys retained private report data across sign-out/sign-in, even though the API enforced ownership. The auth provider now clears queries and cancels pending queries when sessions end and before installing a newly signed-in account. A regression creates an old in-flight query, switches accounts, resolves that old request and verifies that neither cached nor late private results remain.
+
+A revoked access token now clears the browser session on `TOKEN_INVALID`/`TOKEN_MISSING`, while an incorrect password confirmation does not sign the user out. Expired access tokens retain the single-flight refresh/replay behavior. Successful password changes end the current browser session too and return to sign-in with an accurate explanation. The API's session-version revocation remains unchanged.
+
+These are application security checks, not an external penetration test or security certification. They do not remove the documented logout access-token TTL, provider retention, process-local limits or shared-proxy availability constraints.
+
+Additional controlled race regressions reproduced late refresh success/failure replacing or clearing a later login. Ending a session now cancels its in-flight refresh, increments a session generation and ignores responses/errors belonging to an earlier generation. The tests also verify that an old rejected request cannot sign out the new account or replay under the wrong session. These are deterministic automated race tests, not a claim of inducing that race on public infrastructure.
