@@ -171,6 +171,13 @@ apiClient.interceptors.response.use(
         config.headers.Authorization = `Bearer ${token}`;
         return apiClient.request(config);
       }
+    }
+
+    if (
+      error.response?.status === 401 &&
+      (code === 'TOKEN_EXPIRED' || code === 'TOKEN_INVALID' || code === 'TOKEN_MISSING')
+    ) {
+      clearAccessToken();
       onSessionLost?.();
     }
 

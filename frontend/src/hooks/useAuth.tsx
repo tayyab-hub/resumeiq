@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
 import { restoreSession, setSessionLostHandler } from '@/api/client';
 import { AuthContext, type AuthContextValue } from '@/hooks/authContext';
@@ -9,8 +10,17 @@ import type { User } from '@/types';
 // `@/hooks/authContext` — re-exporting it here would re-introduce the mixed
 // component/non-component export that breaks Fast Refresh.
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUserState] = useState<User | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
+
+  const endSession = useCallback(() => {
+    clearAccessToken();
+    setUserState(null);
+    // Private query keys are shared across accounts. Remove cached data and
+    // cancel pending queries so an old response cannot repopulate the cache.
+    queryClient.clear();
+  }, [queryClient]);
 
   /**
    * Restore the session on load.
@@ -45,24 +55,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // A failed silent refresh mid-session must clear the UI, not leave a stale
   // "logged in" shell behind.
   useEffect(() => {
-    setSessionLostHandler(() => {
-      clearAccessToken();
-      setUserState(null);
-    });
+    setSessionLostHandler(endSession);
     return () => setSessionLostHandler(null);
-  }, []);
+  }, [endSession]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await authApi.login({ email, password });
-    setAccessToken(response.access_token);
-    setUserState(response.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const response = await authApi.login({ email, password });
+      queryClient.clear();
+      setAccessToken(response.access_token);
+      setUserState(response.user);
+    },
+    [queryClient],
+  );
 
-  const register = useCallback(async (fullName: string, email: string, password: string) => {
-    const response = await authApi.register({ full_name: fullName, email, password });
-    setAccessToken(response.access_token);
-    setUserState(response.user);
-  }, []);
+  const register = useCallback(
+    async (fullName: string, email: string, password: string) => {
+      const response = await authApi.register({ full_name: fullName, email, password });
+      queryClient.clear();
+      setAccessToken(response.access_token);
+      setUserState(response.user);
+    },
+    [queryClient],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -70,10 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       // Local state clears regardless: a network failure must not leave the
       // user apparently signed in.
-      clearAccessToken();
-      setUserState(null);
+      endSession();
     }
-  }, []);
+  }, [endSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -83,9 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      endSession,
       setUser: setUserState,
     }),
-    [user, isRestoring, login, register, logout],
+    [user, isRestoring, login, register, logout, endSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

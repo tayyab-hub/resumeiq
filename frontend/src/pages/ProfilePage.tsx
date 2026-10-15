@@ -18,12 +18,11 @@ import {
 import { formatDate } from '@/utilities/format';
 
 export function ProfilePage() {
-  const { user, setUser, logout } = useAuth();
+  const { user, setUser, logout, endSession } = useAuth();
   const navigate = useNavigate();
 
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -53,14 +52,12 @@ export function ProfilePage() {
   }
 
   async function onChangePassword(values: ChangePasswordValues) {
-    setPasswordMessage(null);
     setPasswordError(null);
     try {
       await authApi.changePassword(values.current_password, values.new_password);
       passwordForm.reset();
-      setPasswordMessage(
-        'Your password has been changed. All other sessions have been signed out.',
-      );
+      endSession();
+      navigate('/login?password=changed', { replace: true });
     } catch (error) {
       setPasswordError(toApiError(error).what);
     }
@@ -130,7 +127,6 @@ export function ProfilePage() {
             className="space-y-4"
             noValidate
           >
-            {passwordMessage && <Alert tone="success">{passwordMessage}</Alert>}
             {passwordError && <Alert tone="danger">{passwordError}</Alert>}
 
             <TextField
