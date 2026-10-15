@@ -202,6 +202,17 @@ class TestExperienceParsing:
         result = estimate_experience_months("Jan 2025 - Present", today=date(2026, 1, 1))
         assert result.total_months == 12
 
+    def test_default_reference_uses_current_date(self, monkeypatch):
+        from app.analyzers import experience_parser
+
+        class CurrentDate(date):
+            @classmethod
+            def today(cls):
+                return cls(2027, 4, 15)
+
+        monkeypatch.setattr(experience_parser, "date", CurrentDate)
+        assert estimate_experience_months("Jan 2025 - Present").total_months == 27
+
     def test_reads_a_numeric_range(self):
         result = estimate_experience_months("03/2022 - 03/2024", today=date(2026, 1, 1))
         assert result.total_months == 24

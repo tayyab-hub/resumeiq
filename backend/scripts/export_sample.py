@@ -10,6 +10,7 @@ import json
 import sys
 import uuid
 from datetime import UTC, date, datetime
+from difflib import unified_diff
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -65,7 +66,20 @@ def main() -> None:
     target = root / "frontend/src/data/sample-analysis.json"
     rendered = json.dumps(sample_report(), indent=2, ensure_ascii=False) + "\n"
     if "--check" in sys.argv:
-        if target.read_text(encoding="utf-8") != rendered:
+        expected = target.read_text(encoding="utf-8")
+        if expected != rendered:
+            # This report contains only the committed fictional fixture. Show
+            # an actionable diff rather than concealing an intermittent drift.
+            print(
+                "".join(
+                    unified_diff(
+                        expected.splitlines(True),
+                        rendered.splitlines(True),
+                        fromfile="committed sample",
+                        tofile="engine sample",
+                    )
+                )
+            )
             raise SystemExit("Public sample differs from the deterministic engine; regenerate it.")
         print("Public sample matches the deterministic engine.")
         return

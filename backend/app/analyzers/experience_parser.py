@@ -112,7 +112,7 @@ def estimate_experience_months(text: str, today: date | None = None) -> Experien
     `today` is injected rather than read from the clock so the function stays
     pure and its tests stay deterministic.
     """
-    reference = today or date(2026, 1, 1)
+    reference = today or date.today()
     now_month_index = reference.year * 12 + reference.month
     intervals: list[tuple[int, int]] = []
 
