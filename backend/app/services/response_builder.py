@@ -21,7 +21,15 @@ _PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 def to_detail(analysis: Analysis) -> AnalysisDetailOut:
-    matches = [SkillMatchOut.model_validate(match) for match in analysis.skill_matches]
+    # SQL relationships without ORDER BY do not promise insertion order.
+    # Canonicalise unordered collections so persistence cannot change reports.
+    matches = [
+        SkillMatchOut.model_validate(match)
+        for match in sorted(
+            analysis.skill_matches,
+            key=lambda match: (match.requirement_level != "required", match.skill_name),
+        )
+    ]
     job = analysis.job_description
     warnings = []
     if not matches:
@@ -38,7 +46,11 @@ def to_detail(analysis: Analysis) -> AnalysisDetailOut:
         )
 
     findings = [
-        StatementFindingOut.model_validate(finding) for finding in analysis.statement_findings
+        StatementFindingOut.model_validate(finding)
+        for finding in sorted(
+            analysis.statement_findings,
+            key=lambda finding: (-len(finding.issue_codes), finding.statement_text),
+        )
     ]
 
     recommendations = sorted(

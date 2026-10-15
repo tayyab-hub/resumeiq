@@ -495,6 +495,17 @@
     "action_verb_rate": 0.5714,
     "findings": [
       {
+        "statement_text": "Helped with customer queries about the online ordering system",
+        "issue_codes": [
+          "NO_ACTION_VERB",
+          "NO_METRIC",
+          "GENERIC_PHRASING"
+        ],
+        "word_count": 9,
+        "has_measurable_result": false,
+        "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
+      },
+      {
         "statement_text": "Responsible for maintaining the company website",
         "issue_codes": [
           "NO_ACTION_VERB",
@@ -513,17 +524,6 @@
           "GENERIC_PHRASING"
         ],
         "word_count": 5,
-        "has_measurable_result": false,
-        "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
-      },
-      {
-        "statement_text": "Helped with customer queries about the online ordering system",
-        "issue_codes": [
-          "NO_ACTION_VERB",
-          "NO_METRIC",
-          "GENERIC_PHRASING"
-        ],
-        "word_count": 9,
         "has_measurable_result": false,
         "suggestion": "Open with a specific action verb describing what you did, rather than a phrase about your duties. State the result. If you know a figure — a percentage, a count, a time saved — include it. Do not estimate or invent one."
       }

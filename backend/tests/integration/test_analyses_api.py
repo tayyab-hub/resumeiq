@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import logging
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -52,6 +53,18 @@ def analysis_of(client: TestClient):
 
 
 class TestCreateAnalysis:
+    def test_unordered_database_rows_do_not_change_the_report(
+        self, user_a, analysis_of, db_session
+    ):
+        from app.services.response_builder import to_detail
+
+        body = analysis_of(user_a)
+        analysis = db_session.get(Analysis, uuid.UUID(body["id"]))
+        expected = to_detail(analysis).model_dump(mode="json")
+        analysis.skill_matches = list(reversed(analysis.skill_matches))
+        analysis.statement_findings = list(reversed(analysis.statement_findings))
+        assert to_detail(analysis).model_dump(mode="json") == expected
+
     def test_returns_a_complete_result_in_one_round_trip(self, client, user_a, analysis_of):
         body = analysis_of(user_a)
         for key in (
