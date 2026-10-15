@@ -1,6 +1,6 @@
 # Architecture
 
-Release design, 15 October 2026. Hosting remains proposed until the [account and live checks](10-release-readiness.md) pass.
+Release design, 15 October 2026. The public Vercel → Render → Neon deployment is verified in the [dated release evidence](10-release-readiness.md).
 
 ## Boundaries
 

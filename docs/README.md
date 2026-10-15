@@ -16,5 +16,6 @@ Start with [release readiness](10-release-readiness.md), then the [architecture]
 | [Release readiness](10-release-readiness.md) | Dated measured results and blockers |
 | [Deployment](11-deployment.md) | RM0 account gates, migrations and live acceptance |
 | [PDF migration](12-pdf-migration.md) | Licensing decision and five-layout comparison |
+| [Dependency audit](13-dependency-audit.md) | Original advisories, lockfile versions, exposure and verified upgrades |
 
 `screenshots/` contains actual browser captures. `samples/` contains fictional inputs used for the public report. Never put personal resumes, provider credentials or billing screenshots in this repository.

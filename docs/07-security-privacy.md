@@ -12,7 +12,7 @@
 | P1: registration and parsing abuse | Registration quota, global mutation rate/concurrency, request body/receive limits | Multiple identities can still consume finite capacity |
 | P1: refresh redemption race | User-row lock and conditional consumption in replacement transaction | PostgreSQL concurrency regression now runs in CI |
 | P1: password change left access JWTs valid | User session version is carried and checked | Logout only revokes current refresh; copied access JWT lives until expiry |
-| P1: dropped cookie-deletion response | Return the response with matching deletion attributes | Public proxy behavior requires live testing |
+| P1: dropped cookie-deletion response | Return the response with matching deletion attributes | Secure/Lax cookie forwarding and clearing verified through the live proxy |
 | P1: unbounded PDF parsing | Subprocess; file/page/text/time bounds; Linux memory/CPU limits | No Windows address-space enforcement; hostile parser bugs remain possible |
 | P1: AI payload and output boundaries | Derived fields only; strict nested schema, length/list/64 KB caps; no SDK retries | Generated advice may be wrong; disabled for RM0 |
 | P1: dependency vulnerabilities | Upgrade and lock dependencies; enforce audits in CI | Advisory results change over time |
@@ -46,10 +46,10 @@ Application deletion is not a promise of immediate erasure from provider backups
 
 ## AI boundary
 
-`AI_ENABLED_OPT_IN=false`, no key and no model for the intended free deployment. A key alone cannot activate it. No paid calls were made; failure tests mock the provider. If explicitly enabled elsewhere, prompts contain curated skill identifiers, section keys, counts and issue codes. They exclude raw resume/job text, free-form names/titles and flagged statements. Derived skills can still be sensitive in context. Advice is labelled and cannot change the deterministic score.
+`AI_ENABLED_OPT_IN=false`, no key and no model for the verified free deployment. A key alone cannot activate it. No paid calls were made; failure tests mock the provider. If explicitly enabled elsewhere, prompts contain curated skill identifiers, section keys, counts and issue codes. They exclude raw resume/job text, free-form names/titles and flagged statements. Derived skills can still be sensitive in context. Advice is labelled and cannot change the deterministic score.
 
 ## Remaining limits
 
-No email verification/recovery, MFA, distributed throttling, antivirus scan or external penetration test. Restart resets quotas; shared proxy-peer quotas can also deny legitimate users. Public signup can exhaust free resources. Live cookie, persistence, provider billing and backup checks remain separate from local/CI tests.
+No email verification/recovery, MFA, distributed throttling, antivirus scan or external penetration test. Restart resets quotas; shared proxy-peer quotas can also deny legitimate users. Public signup can exhaust free resources. Live cookie, persistence, deletion and provider billing checks are recorded separately from local/CI tests. Neon displayed a six-hour restore window; application deletion cannot promise immediate erasure from provider backups. Login throttling was observed live: HTTP 429 and Retry-After after the shared peer exhausted five attempts in 15 minutes.
 
 The custom secret scanner checks known key formats, private-key markers, credential URL patterns and tracked `.env` files across tracked files/history. The historical `pass` documentation placeholder was inspected before a narrow exemption; other explicit test/documentation passwords are also recognized. This cannot establish the absence of every possible secret.

@@ -5,15 +5,15 @@ Transparent resume and job-description comparison. Every score shows its evidenc
 [![CI](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml/badge.svg?branch=codex%2Fresumeiq-portfolio-release)](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-![Actual local production-build sample report](docs/screenshots/sample-desktop.jpg)
+![Actual hosted sample report](docs/screenshots/sample-desktop.jpg)
 
-**Release status: public deployment is not verified.** No live URL is advertised until Vercel, Render and Neon accounts, billing exposure and the public workflow have been checked. See [dated release evidence](docs/10-release-readiness.md).
+**Live demo:** [ResumeIQ](https://resumeiq-lemon-eight.vercel.app) · [Explore the sample](https://resumeiq-lemon-eight.vercel.app/sample) · [Release evidence](docs/10-release-readiness.md). Hosted on Vercel Hobby, Render Free and Neon Free with AI disabled. The reviewed feature branch is deployed; `main` remains unmerged.
 
 ## Try the portfolio demonstration
 
-Run locally, open `/sample`, and expand a category to inspect its evidence. No account, upload or AI call is needed. This is a static export from the real engine using a fictional candidate and a fixed 15 October 2026 reference date, not a shared demo account.
+Open the public [sample report](https://resumeiq-lemon-eight.vercel.app/sample), and expand a category to inspect its evidence. No account, upload or AI call is needed. This is a static export from the real engine using a fictional candidate and a fixed 15 October 2026 reference date, not a shared demo account.
 
-For the full workflow, create a disposable local account, upload [fictional-resume.pdf](docs/samples/fictional-resume.pdf), paste [fictional-job.txt](docs/samples/fictional-job.txt), and inspect the report. Refresh, visit History, download JSON, then delete the test analysis. Avoid sensitive personal data on an unverified deployment.
+For the full workflow, create a disposable account, upload [fictional-resume.pdf](docs/samples/fictional-resume.pdf), paste [fictional-job.txt](docs/samples/fictional-job.txt), and inspect the report. Refresh, visit History, download JSON, then delete the test analysis. Use fictional data for the portfolio demonstration. The API may take roughly a minute to wake after inactivity.
 
 ## Features
 
@@ -44,9 +44,9 @@ Unavailable categories score 0/0; applicable maxima rescale to exactly 100 with 
 
 ```mermaid
 flowchart LR
-  Browser[React + TypeScript] -->|same-origin /api/v1| Web[Vercel Hobby: proposed]
-  Web -->|HTTPS rewrite| API[FastAPI / Render Free: proposed]
-  API -->|TLS| DB[Neon PostgreSQL: unverified]
+  Browser[React + TypeScript] -->|same-origin /api/v1| Web[Vercel Hobby]
+  Web -->|HTTPS rewrite| API[FastAPI / Render Free]
+  API -->|TLS| DB[Neon PostgreSQL / Singapore]
   API --> Worker[Bounded pypdf subprocess]
   API -. disabled .-> AI[Optional advisory AI]
 ```
@@ -101,7 +101,7 @@ npm audit --audit-level=moderate
 python scripts/scan_secrets.py --history
 ```
 
-On 15 October 2026, local checks measured **264 backend passes, one PostgreSQL-only skip**, **52 frontend passes**, and **91.79% coverage** of `app/analyzers`, `app/services` and `app/security`. This is not whole-application coverage. The PDF subprocess is integration-tested but not coverage-instrumented. Current PostgreSQL/container/CI results are recorded separately in [release readiness](docs/10-release-readiness.md). Python and npm audits reported no known vulnerabilities at that check; this is dated evidence, not a security guarantee.
+On 15 October 2026, local checks measured **266 backend passes, one PostgreSQL-only skip**, **52 frontend passes**, and **91.79% coverage** of `app/analyzers`, `app/services` and `app/security`. This is not whole-application coverage. The PDF subprocess is integration-tested but not coverage-instrumented. Current PostgreSQL/container/CI results are recorded separately in [release readiness](docs/10-release-readiness.md). Python and npm audits reported no known vulnerabilities at that check; this is dated evidence, not a security guarantee.
 
 ## Privacy and security
 
@@ -115,13 +115,21 @@ Optional AI requires explicit opt-in, a key and a model. It receives curated ski
 
 ## Deployment and RM0
 
-Prepared topology: Vercel Hobby, Render Free and the existing `resumeiq-prod` Neon Free project in Singapore. This is **not yet a verified live deployment**. [Deployment runbook](docs/11-deployment.md)
+Verified public topology: [Vercel frontend](https://resumeiq-lemon-eight.vercel.app), [Render API health](https://resumeiq-api-zqip.onrender.com/api/v1/health), and the existing `resumeiq-prod` Neon Free database. Backend and database are in Singapore. [Deployment runbook](docs/11-deployment.md)
 
-Render Free sleeps and shares instance hours across its workspace, so SCAMGUARD usage matters. Bandwidth/build overages can create charge exposure with billing enabled. Vercel Hobby is personal/non-commercial. Neon Free has finite compute/storage/transfer allowances and scales down. Confirm actual account conditions before provisioning; RM0 cannot be certified from plan names alone.
+Verified fixed hosting cost: **RM0/month** under the inspected account conditions. Render has no card on file and showed $0 current/projected charges after deployment. Its 750 free instance hours, bandwidth and build allowance are shared with SCAMGUARD; exhaustion can suspend services or block new builds. Vercel Hobby is personal/non-commercial; Neon Free has finite compute/storage/transfer allowances. No paid add-on, domain or AI request was used. Recheck costs before adding billing or changing plans.
 
 ## Limitations
 
-No OCR or DOCX. Complex layouts, fonts and wrapping can change extraction order. English heuristics and a curated skill catalogue miss niche roles and synonyms; related skills may receive generous partial credit. Dates, education and metrics are patterns, not verification. Live “Present” experience changes with time; the sample date is fixed. No distributed throttling or availability SLA is claimed. Public cookies, persistence, deletion and provider billing still require live verification.
+No OCR or DOCX. Complex layouts, fonts and wrapping can change extraction order. English heuristics and a curated skill catalogue miss niche roles and synonyms; related skills may receive generous partial credit. Dates, education and metrics are patterns, not verification. Live “Present” experience changes with time; the sample date is fixed. No distributed throttling or availability SLA is claimed. Live cookies, persistence across restart, isolation and deletion were tested. Shared proxy-peer login throttling can temporarily block legitimate users; old tabs may need a reload after a frontend deployment. Natural 15-minute idle wake-up is recorded separately from restart testing.
+
+## Screenshots
+
+Actual hosted captures include the [dashboard](docs/screenshots/dashboard-desktop.jpg), [upload form](docs/screenshots/upload-desktop.jpg), [score evidence](docs/screenshots/scoring-evidence.jpg), [skill gaps](docs/screenshots/skill-gaps-desktop.jpg), [history](docs/screenshots/history-desktop.jpg) and [mobile sample](docs/screenshots/sample-mobile.jpg). [Capture inventory](docs/screenshots/README.md)
+
+## Future improvements
+
+Improve date/layout extraction with a broader synthetic corpus, add verified email and account recovery, and introduce durable abuse controls if a legitimate zero-cost option fits the deployment. Any AI enablement needs separate budget and privacy review.
 
 ## Repository guide and author
 

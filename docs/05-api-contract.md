@@ -223,7 +223,7 @@ Errors, all with the three-part message body:
 | `RESUME_INVALID_TYPE` | 415 | Extension, MIME, or magic bytes disagree |
 | `RESUME_TOO_LARGE` | 413 | > 5 MB |
 | `RESUME_EMPTY` | 422 | 0 bytes |
-| `RESUME_CORRUPT` | 422 | PyMuPDF cannot open it |
+| `RESUME_CORRUPT` | 422 | The isolated pypdf parser cannot safely read it |
 | `RESUME_ENCRYPTED` | 422 | Password-protected |
 | `RESUME_NO_TEXT_LAYER` | 422 | < 200 meaningful characters extracted |
 | `JOB_DESCRIPTION_TOO_SHORT` | 422 | < 200 chars |

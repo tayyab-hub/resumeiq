@@ -6,7 +6,7 @@
 
 Use only ResumeIQ resources and the existing Neon `resumeiq-prod`, production branch, Singapore. Inspect existing resources first; do not duplicate them or modify SCAMGUARD/shared billing settings. Never add a card, paid disk/database/compute, purchased domain or billable AI.
 
-Account inspection found Vercel Hobby and Render Hobby with **no card on file**, $0 current/projected charges, 3.93/750 shared free instance hours, 4 MB/5 GB bandwidth and 0/500 pipeline minutes. These quotas are shared with the existing SCAMGUARD service. Inspect again after deployment. Neon plan and database identity still require verification.
+Account inspection found Vercel Hobby and Render Hobby with **no card on file**, $0 current/projected charges, 3.93/750 shared free instance hours, 4 MB/5 GB bandwidth and 0/500 pipeline minutes. These quotas are shared with the existing SCAMGUARD service. After deployment, Render still showed no card and $0 current/projected charges (4.27/750 hours). Neon `resumeiq-prod` / production / Singapore / `neondb` was verified Free with no expiration; a read-only query confirmed zero application tables before initial migration and nine afterwards.
 
 [Render Free documentation](https://render.com/docs/free) confirms 750 shared monthly hours, sleep after 15 minutes, roughly one-minute wake-up, suspension on exhausted hours, and suspension/build disabling instead of overage billing without a payment method. Do not use keep-alive pings. [Vercel Hobby](https://vercel.com/docs/plans/hobby) is personal/non-commercial with finite included usage. [Neon Free](https://neon.com/pricing) has finite compute/storage/transfer limits and scale-to-zero. Recheck provider/account conditions before future changes.
 
@@ -22,9 +22,19 @@ Use `postgresql+psycopg` and TLS. Runtime may use a pooled Neon hostname; migrat
 
 ## Frontend and sessions
 
-Vercel root `frontend`, Vite, `npm ci`, `npm run build`, output `dist`, API base `/api/v1`. After observing the actual Render URL, run `node scripts/configure-hosting.mjs <verified-https-render-origin>` from `frontend`, review and commit its public routing config. The generator accepts only a plain HTTPS onrender.com origin. Initial `vercel.json` returns API 503 until configured. Generated rewrites route API before SPA fallback, with no-store and frontend security headers.
+Vercel root `frontend`, Vite, `npm ci`, `npm run build`, output `dist`, API base `/api/v1`. After observing the actual Render URL, run `node scripts/configure-hosting.mjs <verified-https-render-origin>` from `frontend`, review and commit its public routing config. The generator accepts only a plain HTTPS onrender.com origin. The committed `vercel.json` now forwards to the observed `https://resumeiq-api-zqip.onrender.com` service. Generated rewrites route API before SPA fallback, with no-store and frontend security headers.
 
 Use same-origin proxying for host-only HttpOnly/Secure/Lax refresh cookies. Do not add wildcard or guessed preview CORS origins.
+
+## Deployed resources
+
+- Frontend: https://resumeiq-lemon-eight.vercel.app (Vercel Hobby, Node 22, root `frontend`, `npm ci`, `npm run build`, `dist`).
+- API: https://resumeiq-api-zqip.onrender.com (Render Free, Docker, Singapore, one worker, manual deployments).
+- Neon: existing `resumeiq-prod`, production, AWS Singapore, PostgreSQL 18, `neondb`, migration `0004`, nine application tables.
+- Exact allowed Origin: `https://resumeiq-lemon-eight.vercel.app`. No wildcard preview origins.
+- Vercel production branch tracks `codex/resumeiq-portfolio-release`. Its initial main-branch import was intentionally build-blocked and never published.
+- First empty-database bootstrap completed; `ALLOW_EMPTY_DATABASE_BOOTSTRAP=false` was saved and applied on the next successful deployment.
+- Secrets exist only in private Render settings; no AI key/model is configured. No card, disk or paid add-on was added.
 
 ## Public acceptance
 
