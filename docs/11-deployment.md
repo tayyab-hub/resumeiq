@@ -1,6 +1,22 @@
 # RM0 deployment runbook
 
-15 October 2026. Use the current status in [release readiness](10-release-readiness.md); configuration files alone do not prove deployment.
+## Current production configuration — 16 October 2026
+
+PR #1 is merged. The existing Vercel project and Render service both track `main`; the verified application revision is `1c4ae287e44eb5aa663ef786e3b9318360a51769`. Main CI passed all four jobs before deployment. Vercel deployment `CHmSE7x5Pp7Jz28XrY3qjbn93LR7` is Ready/Current; Render deployment `dep-db901lbrjlhs73do7m1g` is Live. Current verification and the final documentation merge record are described in [release readiness](10-release-readiness.md).
+
+- Vercel: existing `resumeiq` project, Hobby, Production Branch Tracking `main`, root `frontend`, Vite, Node 22, `npm ci`, `npm run build`, `dist`. Preserve the existing `https://resumeiq-lemon-eight.vercel.app` domain, same-origin API proxy and security headers.
+- Render: existing `resumeiq-api` / `srv-db86mulg1s2s7398dkfg`, branch `main`, **Auto-Deploy off**, Free/Singapore/Docker, root `backend`, Dockerfile `./Dockerfile`, context `.`, `/api/v1/health`, one Uvicorn worker. Manually deploy only a revision whose main CI passed.
+- Neon: existing `resumeiq-prod` / production / `neondb`, Free/PostgreSQL 18/AWS Singapore, migration `0004`, nine application tables. Preserve pooled runtime and direct migration URLs, TLS, role, credentials and expected database identity. Keep bootstrap false and AI disabled. Never reset or downgrade production.
+- `render.yaml` is a template matching these settings, not an instruction to provision another service. Do not reapply secret generation. The JWT secret was intentionally retained; pre-deployment refresh sessions and reports survived the new backend.
+- Fixed hosting cost remains RM0 under the inspected free plans. Current dated quotas and shared-workspace limits are in release readiness. Do not add keep-alive traffic or paid capacity.
+
+For a future release, fetch and inspect the intended diff, pass all mandatory PR checks, merge through the authorized workflow, wait for main CI, and deploy that verified main SHA using these same resources. Confirm the provider's actual deployed SHA and status, then direct/proxied health and affected live workflows. Vercel may skip documentation-only builds; a different documentation descendant SHA does not imply different application code. Render remains manual. Record the deployed application revision separately from later documentation commits.
+
+On a failed deployment, inspect the actual provider/application error, repair through a safe branch and CI, or redeploy the previous verified revision on the same service. Preserve Neon and stable URLs; never perform a blind database rollback. Keep the original release branch and historical CI evidence.
+
+## Historical deployment runbook and transition plan
+
+The remainder preserves the 15 October runbook and the plan prepared before the authorized 16 October cutover. Its feature-branch, unmerged and pending-approval statements describe that earlier state and are superseded by the completed configuration above. Configuration files alone never prove deployment.
 
 ## Scope and cost gate
 
