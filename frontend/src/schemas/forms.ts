@@ -14,7 +14,11 @@ const password = z
   .min(10, 'Password must be at least 10 characters long')
   .max(128, 'Password must be 128 characters or fewer')
   .regex(/[A-Za-z]/, 'Password must contain at least one letter')
-  .regex(/\d/, 'Password must contain at least one number');
+  .regex(/\d/, 'Password must contain at least one number')
+  .refine(
+    (value) => new TextEncoder().encode(value).length <= 72,
+    'Password must be at most 72 UTF-8 bytes',
+  );
 
 export const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),

@@ -31,19 +31,22 @@ def _set_refresh_cookie(response: Response, token: str, max_age: int) -> None:
         path=REFRESH_COOKIE_PATH,
         httponly=True,  # unreadable by JavaScript, so an XSS payload cannot steal it
         secure=settings.is_production,
-        # The frontend and API are on different registrable domains in
-        # production, so the cookie must be SameSite=None. That is safe only
-        # because Secure is set and the CORS origin allowlist is strict.
-        samesite="none" if settings.is_production else "lax",
+        samesite="lax",
     )
 
 
 def _clear_refresh_cookie(response: Response) -> None:
-    response.delete_cookie(key=REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path=REFRESH_COOKIE_PATH,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+    )
 
 
 def _login_response(db: Session, response: Response, user: User) -> TokenResponse:
-    access_token, expires_in = create_access_token(user.id)
+    access_token, expires_in = create_access_token(user.id, user.session_version)
     raw_refresh, max_age = auth_service.issue_refresh_token(db, user.id)
     _set_refresh_cookie(response, raw_refresh, max_age)
     return TokenResponse(
@@ -61,12 +64,11 @@ def register(
     db: Session = Depends(get_db),
 ) -> TokenResponse:
     ip_key = f"register:{client_ip(request)}"
-    retry_after = limiter.check(ip_key, settings.register_max_per_hour, SECONDS_PER_HOUR)
+    retry_after = limiter.consume(ip_key, settings.register_max_per_hour, SECONDS_PER_HOUR)
     if retry_after is not None:
         response.headers["Retry-After"] = str(retry_after)
         raise AppError(RATE_LIMITED, retry_after=retry_after)
 
-    limiter.hit(ip_key, SECONDS_PER_HOUR)
     user = auth_service.register(
         db, full_name=payload.full_name, email=payload.email, password=payload.password
     )
@@ -87,21 +89,14 @@ def login(
     window = settings.login_window_seconds
 
     for key in (email_key, ip_key):
-        retry_after = limiter.check(key, settings.login_max_attempts, window)
+        retry_after = limiter.consume(key, settings.login_max_attempts, window)
         if retry_after is not None:
             response.headers["Retry-After"] = str(retry_after)
             raise AppError(TOO_MANY_ATTEMPTS, retry_after=retry_after)
 
-    try:
-        user = auth_service.authenticate(db, email=payload.email, password=payload.password)
-    except AppError:
-        # Only failures are counted, so a legitimate user is never throttled.
-        limiter.hit(email_key, window)
-        limiter.hit(ip_key, window)
-        raise
-
-    limiter.reset(email_key)
-    limiter.reset(ip_key)
+    # Reserve attempts before expensive hashing. Successful logins cannot reset
+    # an attacker's IP allowance; concurrent attempts cannot pass check-then-hit.
+    user = auth_service.authenticate(db, email=payload.email, password=payload.password)
     return _login_response(db, response, user)
 
 
@@ -115,7 +110,6 @@ def refresh(
     user = auth_service.redeem_refresh_token(db, raw_token)
     # Rotate: the presented token is revoked and a new one issued, so a stolen
     # refresh token has a short useful life.
-    auth_service.revoke(db, raw_token)
     return _login_response(db, response, user)
 
 
@@ -127,7 +121,8 @@ def logout(
 ) -> Response:
     auth_service.revoke(db, request.cookies.get(REFRESH_COOKIE_NAME))
     _clear_refresh_cookie(response)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.get("/me", response_model=UserPublic)

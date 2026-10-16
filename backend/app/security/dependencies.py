@@ -27,19 +27,16 @@ def get_current_user(
     claims = decode_access_token(_bearer_token(request))
     user = db.get(User, claims.user_id)
     # A token for a deleted or deactivated account must fail, not merely expire.
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or user.session_version != claims.session_version:
         raise AppError(TOKEN_INVALID)
     return user
 
 
 def client_ip(request: Request) -> str:
-    """Best-effort client address for rate limiting.
+    """Use the transport peer, never arbitrary forwarded headers.
 
-    Behind Render's proxy the real address is the first X-Forwarded-For entry.
-    This is a rate-limit key, never an authorisation input, so a spoofed header
-    can only cost the spoofer their own quota.
+    Deploy with --no-proxy-headers until the provider's trusted proxy chain is
+    verified. Proxy users then share a conservative quota; email/account and
+    global quotas remain effective even when the real client IP is unavailable.
     """
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"

@@ -51,6 +51,14 @@ const router = createBrowserRouter([
       { path: '/', element: <LandingPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
       {
+        path: '/sample',
+        element: (
+          <Lazy>
+            <ResultsPage sample />
+          </Lazy>
+        ),
+      },
+      {
         path: '/login',
         element: (
           <PublicOnlyRoute>

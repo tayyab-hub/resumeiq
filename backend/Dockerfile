@@ -29,7 +29,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # The application runs as a non-root user. If the process is ever compromised,
-# it has no write access to the image and no privilege to escalate.
+# its OS privileges are limited; this does not replace resource limits or patching.
 RUN useradd --create-home --shell /usr/sbin/nologin appuser
 
 COPY --from=builder /wheels /wheels
@@ -44,8 +44,7 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4).status == 200 else 1)"
+    CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8000')+'/api/v1/health', timeout=4)"
 
-# Migrations run as a deploy release command, never here: two starting workers
-# would race each other applying the same migration.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 2"]
+# Free-tier startup migrations use a database lock and fail closed.
+CMD ["python", "-m", "scripts.startup"]

@@ -1,38 +1,21 @@
-# ResumeIQ — Planning Documents
+# ResumeIQ documentation
 
-Phase 1 deliverables for **ResumeIQ — AI Resume Analyzer and Job Matching Platform**.
-These are living documents: when an implementation decision contradicts one of them, update
-the document in the same pull request as the code.
+Start with [release readiness](10-release-readiness.md), then the [architecture](03-architecture.md), [scoring methodology](06-scoring-methodology.md), [security/privacy review](07-security-privacy.md) and [deployment runbook](11-deployment.md).
 
-| # | Document | What it settles |
-|---|---|---|
-| 01 | [Requirements](01-requirements.md) | Problem statement, users, scope, functional (FR-*) and non-functional (NFR-*) requirements, constraints, open decisions |
-| 02 | [User stories](02-user-stories.md) | 20 stories with testable acceptance criteria, mapped to requirement IDs |
-| 03 | [Architecture](03-architecture.md) | Layering, request flow, data-flow boundaries, technology rationale, deployment, known limitations |
-| 04 | [Database design](04-database-design.md) | ERD, eight tables, constraints, indexes, migration plan, representative queries |
-| 05 | [API contract](05-api-contract.md) | 17 endpoints, request/response shapes, the complete error-code table, cross-cutting rules |
-| 06 | [Scoring methodology](06-scoring-methodology.md) | The published rubric — eight categories, weights, formulas, limitations, worked example |
-| 07 | [Security & privacy](07-security-privacy.md) | Threat model, 11 risk controls, data-minimisation plan, security testing checklist |
-| 08 | [Testing strategy](08-testing-strategy.md) | Test pyramid, per-module test lists, CI configuration, manual checklist, test-data policy |
-| 09 | [Project plan](09-project-plan.md) | 30-day schedule, first 22 GitHub issues, git workflow, risk register, definition of complete |
-
-## Reading order
-
-- **Starting the build?** 09 (schedule) → 03 (architecture) → 04 (database).
-- **Implementing a feature?** Find its FR-ID in 01, its story in 02, its endpoint in 05.
-- **Writing the scorer?** 06 is the specification; deviating from it is a bug in one of them.
-- **Reviewing this project?** 01 §1 for the problem, 06 for the method, 07 §3 for the privacy
-  posture, and 03 §11 for what it deliberately does not do.
-
-## Status
-
-| Phase | Status |
+| Document | Purpose |
 |---|---|
-| 1 — Requirements, architecture, planning | Awaiting developer review |
-| 2–15 | Not started |
+| [Requirements](01-requirements.md) | Historical scope and requirements |
+| [User stories](02-user-stories.md) | Historical acceptance criteria |
+| [Architecture](03-architecture.md) | Current boundaries and request flow |
+| [Database](04-database-design.md) | Nine application tables, relationships and migration notes |
+| [API](05-api-contract.md) | Endpoints plus release contract amendments |
+| [Scoring](06-scoring-methodology.md) | Published rubric, sparse evidence and limitations |
+| [Security/privacy](07-security-privacy.md) | Findings, remediation, data inventory and residual risk |
+| [Testing](08-testing-strategy.md) | SQLite versus PostgreSQL, CI and coverage scope |
+| [Project plan](09-project-plan.md) | Original schedule; not current release evidence |
+| [Release readiness](10-release-readiness.md) | Dated measured results and blockers |
+| [Deployment](11-deployment.md) | RM0 account gates, migrations and live acceptance |
+| [PDF migration](12-pdf-migration.md) | Licensing decision and five-layout comparison |
+| [Dependency audit](13-dependency-audit.md) | Original advisories, lockfile versions, exposure and verified upgrades |
 
-## Decisions awaiting confirmation
-
-See `01-requirements.md` §7. Summary: token storage strategy (**D1**), AI provider (**D2**),
-résumé-text retention (**D3**), skill taxonomy source (**D4**), required/preferred split
-heuristic (**D5**), backend hosting (**D6**).
+`screenshots/` contains actual browser captures. `samples/` contains fictional inputs used for the public report. Never put personal resumes, provider credentials or billing screenshots in this repository.

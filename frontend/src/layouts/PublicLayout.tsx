@@ -29,14 +29,14 @@ export function PublicLayout() {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-ink-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-2 py-3 px-4 sm:px-6">
           <Logo />
           <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
             <NavLink
               to="/privacy"
               className={({ isActive }) =>
                 cn(
-                  'rounded px-3 py-2 text-sm font-medium transition-colors',
+                  'rounded px-2 py-2 text-xs sm:px-3 sm:text-sm font-medium transition-colors',
                   isActive ? 'text-brand-700' : 'text-ink-600 hover:text-ink-900',
                 )
               }
@@ -46,7 +46,7 @@ export function PublicLayout() {
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
-                className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+                className="rounded bg-brand-600 px-2 py-2 text-xs sm:px-4 sm:text-sm font-medium text-white hover:bg-brand-700"
               >
                 Dashboard
               </Link>
@@ -54,13 +54,13 @@ export function PublicLayout() {
               <>
                 <Link
                   to="/login"
-                  className="rounded px-3 py-2 text-sm font-medium text-ink-600 hover:text-ink-900"
+                  className="rounded px-2 py-2 text-xs sm:px-3 sm:text-sm font-medium text-ink-600 hover:text-ink-900"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+                  className="rounded bg-brand-600 px-2 py-2 text-xs sm:px-4 sm:text-sm font-medium text-white hover:bg-brand-700"
                 >
                   Create account
                 </Link>

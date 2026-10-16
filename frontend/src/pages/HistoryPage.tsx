@@ -134,7 +134,7 @@ export function HistoryPage() {
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[38rem] text-sm">
                 <caption className="sr-only">Your saved analyses, most recent first</caption>
                 <thead className="border-b border-ink-200 bg-ink-50 text-left">

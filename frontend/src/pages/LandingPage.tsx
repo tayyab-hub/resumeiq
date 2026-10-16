@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge, Card, CardBody } from '@/components/ui/Primitives';
+import sampleAnalysis from '@/data/sample-analysis.json';
 
 const FEATURES = [
   {
@@ -37,12 +38,12 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: 'Optional AI suggestions',
-    body: 'When an AI provider is configured, it drafts rewording using only what you wrote. Every suggestion is labelled as AI, and the analysis is complete without it.',
+    body: 'AI is disabled on this free demo. An explicitly enabled provider can offer advisory suggestions. Every suggestion is labelled as AI, and the analysis is complete without it.',
   },
   {
     icon: Lock,
-    title: 'Your file is never stored',
-    body: 'The PDF is read in memory and discarded. The extracted text is not kept unless you explicitly opt in for a given analysis.',
+    title: 'No permanent PDF storage',
+    body: 'Uploads may use temporary storage and are removed after processing. Results retain short evidence excerpts; full text is saved only with your opt-in.',
   },
 ];
 
@@ -68,11 +69,11 @@ const FAQ = [
   },
   {
     q: 'What happens to my resume?',
-    a: 'The PDF is read in memory to extract its text, then discarded — it is never written to disk or stored in a database. By default the extracted text is not stored either; only the analysis results are. You can opt in per analysis if you want the text kept.',
+    a: 'Uploads may be buffered in temporary storage, then removed after processing. Saved results include evidence snippets and flagged statements. Full extracted text is saved only if you opt in.',
   },
   {
     q: 'What does the AI service receive?',
-    a: 'Only derived findings: skill names, which sections are missing, the statements that were flagged, and the job title. Not the file, not the full resume text, and not your name, email, phone number, or address.',
+    a: 'AI is disabled on the free demo. If explicitly enabled in another deployment, it receives curated skill names, section identifiers, numeric counts and issue codes. Free-form statements and titles are excluded. Generated suggestions can still be inaccurate.',
   },
   {
     q: 'Why did it miss a skill I definitely have?',
@@ -117,8 +118,17 @@ export function LandingPage() {
           for every category.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link to="/register">
-            <Button size="lg">Create a free account</Button>
+          <Link
+            to="/sample"
+            className="rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-700"
+          >
+            Explore Sample Analysis
+          </Link>
+          <Link
+            to="/register"
+            className="rounded-lg border border-ink-200 px-6 py-3 text-base font-medium text-ink-800 hover:bg-ink-50"
+          >
+            Analyse your resume
           </Link>
           <a href="#scoring">
             <Button size="lg" variant="secondary">
@@ -127,7 +137,7 @@ export function LandingPage() {
           </a>
         </div>
         <p className="mt-4 text-sm text-ink-500">
-          Your PDF is never stored. No credit card, no trial period.
+          Try the fictional sample instantly. No signup, personal data or AI API needed.
         </p>
       </Section>
 
@@ -139,31 +149,31 @@ export function LandingPage() {
               Example output · demonstration data for a fictional candidate
             </p>
           </div>
-          <CardBody className="grid gap-6 sm:grid-cols-[auto,1fr] sm:items-center">
+          <CardBody className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
             <div className="text-center">
-              <div className="text-5xl font-semibold tabular-nums text-info-700">69</div>
-              <p className="text-sm font-medium text-info-700">Moderate alignment</p>
+              <div className="text-5xl font-semibold tabular-nums text-info-700">
+                {sampleAnalysis.overall_score}
+              </div>
+              <p className="text-sm font-medium text-info-700">Rubric score / 100</p>
             </div>
             <ul className="space-y-2 text-sm">
-              {[
-                ['Required skill coverage', '21.67 / 30', 'Matched 6 of 9, partially matched 1'],
-                ['Relevant experience', '10.00 / 15', '18 months against a 2-year requirement'],
-                [
-                  'Measurable achievements',
-                  '4.00 / 10',
-                  '2 statements contain a quantified result',
-                ],
-                ['Statement quality', '2.00 / 5', 'Generic phrasing in 3 bullets'],
-              ].map(([label, points, detail]) => (
-                <li
-                  key={label}
-                  className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-ink-200 pb-2"
-                >
-                  <span className="font-medium text-ink-800">{label}</span>
-                  <span className="tabular-nums text-ink-900">{points}</span>
-                  <span className="w-full text-xs text-ink-500">{detail}</span>
-                </li>
-              ))}
+              {sampleAnalysis.score_breakdown
+                .slice(0, 4)
+                .map((category) => [
+                  category.category_name,
+                  `${category.points_earned.toFixed(2)} / ${category.points_possible.toFixed(2)}`,
+                  category.explanation,
+                ])
+                .map(([label, points, detail]) => (
+                  <li
+                    key={label}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-ink-200 pb-2"
+                  >
+                    <span className="font-medium text-ink-800">{label}</span>
+                    <span className="tabular-nums text-ink-900">{points}</span>
+                    <span className="w-full text-xs text-ink-500">{detail}</span>
+                  </li>
+                ))}
             </ul>
           </CardBody>
         </Card>
@@ -229,7 +239,7 @@ export function LandingPage() {
           {[
             [
               'Upload your resume',
-              'A PDF, up to 5 MB. It is validated, read in memory, and discarded — never written to disk.',
+              'A text PDF, up to 5 MB and 10 pages. Temporary upload buffers are removed after processing.',
             ],
             [
               'Paste the job description',
@@ -255,7 +265,7 @@ export function LandingPage() {
       <Section id="privacy-summary">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2>Built around not keeping your data</h2>
+            <h2>Control what you share and save</h2>
             <p className="mt-4 leading-relaxed text-ink-600">
               A resume contains your full name, address, phone number, and employment history. The
               safest way to protect that is not to hold it.
@@ -267,7 +277,7 @@ export function LandingPage() {
 
           <ul className="space-y-3">
             {[
-              [ShieldCheck, 'The PDF is never written to disk or stored in the database.'],
+              [ShieldCheck, 'PDF uploads are temporary and are not saved in the database.'],
               [Lock, 'Resume text is not stored unless you opt in for that analysis.'],
               [ShieldCheck, 'Passwords are hashed with bcrypt. Session tokens are stored hashed.'],
               [CheckCircle2, 'Resume content never appears in application logs.'],
@@ -348,7 +358,7 @@ export function LandingPage() {
           <CardBody className="py-12">
             <h2 className="text-white">Find out what a job posting is actually asking for</h2>
             <p className="mx-auto mt-3 max-w-xl leading-relaxed text-brand-100">
-              Free to use, your file is never stored, and every point in the score is explained.
+              Explore the fictional sample, then review the evidence behind every point.
             </p>
             <Link to="/register" className="mt-7 inline-block">
               <Button size="lg" variant="secondary">

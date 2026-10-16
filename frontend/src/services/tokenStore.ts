@@ -9,6 +9,7 @@
  */
 
 let accessToken: string | null = null;
+let sessionGeneration = 0;
 const listeners = new Set<(token: string | null) => void>();
 
 export function getAccessToken(): string | null {
@@ -21,7 +22,12 @@ export function setAccessToken(token: string | null): void {
 }
 
 export function clearAccessToken(): void {
+  sessionGeneration += 1;
   setAccessToken(null);
+}
+
+export function getSessionGeneration(): number {
+  return sessionGeneration;
 }
 
 export function onTokenChange(listener: (token: string | null) => void): () => void {

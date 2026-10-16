@@ -5,8 +5,10 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, Query, Response, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.error_codes import (
@@ -19,6 +21,7 @@ from app.core.error_codes import (
 )
 from app.core.exceptions import AppError
 from app.database.session import get_db
+from app.models.analysis import Analysis
 from app.models.user import User
 from app.repositories import analysis_repository as repo
 from app.schemas.analysis import (
@@ -74,15 +77,26 @@ async def create_analysis(
     response: Response,
     resume: UploadFile | None = File(default=None),
     job_description: str = Form(...),
-    job_title: str | None = Form(default=None),
-    company_name: str | None = Form(default=None),
-    title: str | None = Form(default=None),
+    job_title: str | None = Form(default=None, max_length=160),
+    company_name: str | None = Form(default=None, max_length=160),
+    title: str | None = Form(default=None, max_length=120),
     store_resume_text: bool = Form(default=False),
+    idempotency_key: uuid.UUID | None = Header(default=None, alias="X-Idempotency-Key"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AnalysisDetailOut:
+    if idempotency_key:
+        existing = db.scalar(
+            select(Analysis).where(
+                Analysis.user_id == current_user.id,
+                Analysis.request_key == str(idempotency_key),
+            )
+        )
+        if existing is not None:
+            response.status_code = status.HTTP_200_OK
+            return to_detail(existing)
     quota_key = f"analyses:{current_user.id}"
-    retry_after = limiter.check(quota_key, settings.analyses_per_day, SECONDS_PER_DAY)
+    retry_after = limiter.consume(quota_key, settings.analyses_per_day, SECONDS_PER_DAY)
     if retry_after is not None:
         response.headers["Retry-After"] = str(retry_after)
         raise AppError(RATE_LIMITED, retry_after=retry_after)
@@ -90,19 +104,20 @@ async def create_analysis(
     if resume is None or not resume.filename:
         raise AppError(RESUME_MISSING)
 
-    # Three independent checks. The magic-byte check inside the extractor is
-    # the authoritative one, because it is the only one an attacker cannot
-    # forge by renaming a file or setting a header.
+    # These are format hints; the isolated parser also checks PDF structure.
     if not has_pdf_extension(resume.filename):
         raise AppError(RESUME_INVALID_TYPE)
     if resume.content_type and resume.content_type.lower() not in ALLOWED_MIME_TYPES:
         raise AppError(RESUME_INVALID_TYPE)
 
     cleaned_jd = analysis_service.validate_job_description(job_description)
-    data = await _read_upload_within_limit(resume, settings.max_upload_bytes)
+    try:
+        data = await _read_upload_within_limit(resume, settings.max_upload_bytes)
+    finally:
+        await resume.close()
 
-    resume_profile, job_profile, breakdown, extracted_text = analysis_service.run_analysis(
-        data, cleaned_jd
+    resume_profile, job_profile, breakdown, extracted_text = await run_in_threadpool(
+        analysis_service.run_analysis, data, cleaned_jd
     )
 
     safe_filename = sanitise_filename(resume.filename)
@@ -125,14 +140,13 @@ async def create_analysis(
         job_title=(job_title or "").strip() or None,
         company_name=(company_name or "").strip() or None,
         raw_job_description=cleaned_jd,
+        request_key=str(idempotency_key) if idempotency_key else None,
     )
-    limiter.hit(quota_key, SECONDS_PER_DAY)
 
     # The analysis is already committed. Everything below is enrichment, and
     # its failure cannot lose the user's result.
     ai_key = f"ai:{current_user.id}"
-    if limiter.check(ai_key, settings.ai_calls_per_day, SECONDS_PER_DAY) is None:
-        limiter.hit(ai_key, SECONDS_PER_DAY)
+    if limiter.consume(ai_key, settings.ai_calls_per_day, SECONDS_PER_DAY) is None:
         analysis = analysis_service.enrich_with_ai(
             db, analysis, resume_profile, job_profile, breakdown
         )
@@ -226,7 +240,7 @@ def regenerate_recommendations(
         raise AppError(ANALYSIS_NOT_FOUND)
 
     ai_key = f"ai:{current_user.id}"
-    retry_after = limiter.check(ai_key, settings.ai_calls_per_day, SECONDS_PER_DAY)
+    retry_after = limiter.consume(ai_key, settings.ai_calls_per_day, SECONDS_PER_DAY)
     if retry_after is not None:
         response.headers["Retry-After"] = str(retry_after)
         raise AppError(AI_QUOTA_EXCEEDED, retry_after=retry_after)
@@ -246,7 +260,6 @@ def regenerate_recommendations(
     job_profile = parse_job_description(analysis.job_description.raw_text)
     breakdown = compute_score(resume_profile, job_profile)
 
-    limiter.hit(ai_key, SECONDS_PER_DAY)
     analysis = analysis_service.replace_ai_recommendations(
         db, analysis, resume_profile, job_profile, breakdown
     )

@@ -5,6 +5,14 @@
 
 ---
 
+## Release implementation notes — 15 October 2026
+
+There are **nine application tables**: users, refresh_tokens, analyses, job_descriptions, score_categories, skill_matches, resume_sections, statement_findings and recommendations. Alembic adds its own version table. Email is normalized by application validation and stored as VARCHAR, not CITEXT.
+
+Migration `0004_release_safety` adds `users.session_version` (non-null integer, default zero) and nullable `analyses.request_key` (36-character UUID string), unique with user_id. Password changes increment the version to invalidate old access JWTs. The idempotency key makes repeated uploads return one owned report. Refresh consumption/password changes lock the user row to serialize session mutations. Full extracted text is opt-in; evidence excerpts remain stored by default.
+
+The original schema design below remains useful for relationships; actual SQLAlchemy models and migrations are authoritative for exact types and indexes. PostgreSQL 16 CI now exercises migrations and the API suite; deployed Neon identity/state must be independently verified.
+
 ## 1. Entity relationship diagram
 
 ```mermaid
@@ -20,9 +28,10 @@ erDiagram
 
     USERS {
         uuid id PK
-        citext email UK
+        varchar email UK
         varchar full_name
         varchar password_hash
+        integer session_version
         boolean is_active
         timestamptz created_at
         timestamptz updated_at

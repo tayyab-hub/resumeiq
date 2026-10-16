@@ -20,22 +20,25 @@ import { analysesApi } from '@/api/analyses';
 import { toApiError } from '@/api/client';
 import { downloadAnalysisJson } from '@/services/exportReport';
 import { formatDateTime } from '@/utilities/format';
+import sampleAnalysis from '@/data/sample-analysis.json';
+import type { AnalysisDetail } from '@/types';
 
-export function ResultsPage() {
+export function ResultsPage({ sample = false }: { sample?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
 
   const {
-    data: analysis,
+    data: storedAnalysis,
     isLoading,
     error,
     refetch,
   } = useQuery({
     queryKey: ['analysis', id],
     queryFn: () => analysesApi.get(id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !sample,
   });
+  const analysis = sample ? (sampleAnalysis as AnalysisDetail) : storedAnalysis;
 
   const regenerate = useMutation({
     mutationFn: () => analysesApi.regenerateRecommendations(id!),
@@ -66,15 +69,30 @@ export function ResultsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      {sample && (
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
+          <p className="font-semibold text-brand-900">Explore Sample Analysis</p>
+          <p className="mt-1 text-sm text-brand-800">
+            Read-only results from the real scoring engine, using a fictional resume and job
+            description. No account or upload needed. Reference date: 15 October 2026.
+          </p>
+          <Link
+            to="/register"
+            className="mt-3 inline-block text-sm font-semibold text-brand-700 underline"
+          >
+            Create an account to analyse your own resume
+          </Link>
+        </div>
+      )}
       {/* Navigation and controls are excluded from print by `no-print`. */}
       <div className="no-print">
         <Link
-          to="/history"
+          to={sample ? '/' : '/history'}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to history
+          {sample ? 'Back to home' : 'Back to history'}
         </Link>
       </div>
 
@@ -132,6 +150,14 @@ export function ResultsPage() {
       </Card>
 
       <ScoreDisclaimer text={analysis.disclaimer} />
+      {analysis.evidence_warnings?.map((warning) => (
+        <p
+          key={warning}
+          className="rounded-lg border border-warning-500/30 bg-warning-50 p-4 text-sm text-warning-700"
+        >
+          {warning}
+        </p>
+      ))}
 
       <div className="space-y-2">
         <AiStatusNotice
@@ -139,7 +165,9 @@ export function ResultsPage() {
           reasonCode={analysis.ai_reason_code}
           message={analysis.ai_message}
         />
-        {analysis.ai_status === 'unavailable' &&
+        {!sample &&
+          analysis.ai_status === 'unavailable' &&
+          analysis.ai_reason_code !== 'not_configured' &&
           analysis.ai_reason_code !== 'resume_text_not_stored' && (
             <div className="no-print">
               <Button

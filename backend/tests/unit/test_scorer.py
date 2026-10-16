@@ -56,9 +56,7 @@ class TestScoreArithmetic:
     def test_overall_equals_the_sum_of_the_parts(self):
         resume, job = build_profiles(FICTIONAL_RESUME, FICTIONAL_JOB_DESCRIPTION)
         breakdown = compute_score(resume, job)
-        assert breakdown.overall_score == round(
-            sum(c.points_earned for c in breakdown.categories)
-        )
+        assert breakdown.overall_score == round(sum(c.points_earned for c in breakdown.categories))
 
     def test_no_category_exceeds_its_possible_points(self):
         resume, job = build_profiles(FICTIONAL_RESUME, FICTIONAL_JOB_DESCRIPTION)
@@ -99,8 +97,7 @@ class TestTransparency:
     def test_skill_comparisons_carry_evidence_for_matches(self):
         resume, job = build_profiles(FICTIONAL_RESUME, FICTIONAL_JOB_DESCRIPTION)
         matched = [
-            c for c in compute_score(resume, job).skill_comparisons
-            if c.match_status == "matched"
+            c for c in compute_score(resume, job).skill_comparisons if c.match_status == "matched"
         ]
         assert matched
         assert all(c.evidence_snippet for c in matched)
@@ -141,20 +138,30 @@ class TestEdgeCases:
 
     def test_job_with_no_extractable_skills_does_not_crash(self):
         job = JobProfile(
-            raw_text="x", job_title=None, company_name=None,
-            required_skills=(), preferred_skills=(),
-            min_years_experience=None, required_education_level=None,
-            keywords=(), requirement_split_inferred=True,
+            raw_text="x",
+            job_title=None,
+            company_name=None,
+            required_skills=(),
+            preferred_skills=(),
+            min_years_experience=None,
+            required_education_level=None,
+            keywords=(),
+            requirement_split_inferred=True,
         )
         breakdown = compute_score(self._empty_resume(), job)
         assert breakdown.overall_score >= 0
 
     def test_categories_rescale_to_one_hundred_when_one_is_not_applicable(self):
         job = JobProfile(
-            raw_text="x", job_title=None, company_name=None,
-            required_skills=("python",), preferred_skills=(),  # no preferred skills
-            min_years_experience=None, required_education_level=None,
-            keywords=("platform",), requirement_split_inferred=True,
+            raw_text="x",
+            job_title=None,
+            company_name=None,
+            required_skills=("python",),
+            preferred_skills=(),  # no preferred skills
+            min_years_experience=None,
+            required_education_level=None,
+            keywords=("platform",),
+            requirement_split_inferred=True,
         )
         breakdown = compute_score(self._empty_resume(), job)
         total = sum(c.points_possible for c in breakdown.categories)
@@ -173,9 +180,10 @@ class TestEdgeCases:
                 "preferred_skills": (),
             }
         )
-        assert compute_score(resume, without).overall_score >= compute_score(
-            resume, with_preferred
-        ).overall_score
+        assert (
+            compute_score(resume, without).overall_score
+            >= compute_score(resume, with_preferred).overall_score
+        )
 
 
 class TestWorkedExample:
@@ -187,9 +195,7 @@ class TestWorkedExample:
         related_for_testing = ["unit testing"]  # related to the required "automated testing"
         resume_text = (
             "Contact: worker@example.invalid\n\n"
-            "Skills\n"
-            + ", ".join(matched + related_for_testing)
-            + "\n\nWork Experience\n"
+            "Skills\n" + ", ".join(matched + related_for_testing) + "\n\nWork Experience\n"
             "Jul 2024 - Jan 2026\n"
             "- Built services with python and postgresql and docker in production\n"
             "- Delivered rest api endpoints using git and linux tooling daily\n"
@@ -231,21 +237,27 @@ class TestWorkedExample:
         keywords = tuple(f"kw{i}" for i in range(total))
 
         resume = ResumeProfile(
-            text="", skills=(),
+            text="",
+            skills=(),
             sections=tuple(
                 SectionResult(key=key, detected=False, matched_heading=None, note="")
                 for key in SECTION_POINTS
             ),
-            statements=StatementAnalysis(0, 0, 0.0, ()),
+            statements=StatementAnalysis(1, 0, 1.0, ()),
             experience=ExperienceEstimate(None, 0),
             education_level="none",
             keywords_present=frozenset(keywords[:present]),
         )
         job = JobProfile(
-            raw_text="x", job_title=None, company_name=None,
-            required_skills=("python",), preferred_skills=("redis",),
-            min_years_experience=None, required_education_level=None,
-            keywords=keywords, requirement_split_inferred=False,
+            raw_text="x",
+            job_title=None,
+            company_name=None,
+            required_skills=("python",),
+            preferred_skills=("redis",),
+            min_years_experience=None,
+            required_education_level=None,
+            keywords=keywords,
+            requirement_split_inferred=False,
         )
         category = next(
             c for c in compute_score(resume, job).categories if c.key == "keyword_coverage"
@@ -280,7 +292,8 @@ class TestAchievementBands:
     )
     def test_bands_match_the_published_table(self, count, expected):
         resume = ResumeProfile(
-            text="", skills=(),
+            text="",
+            skills=(),
             sections=tuple(
                 SectionResult(key=key, detected=False, matched_heading=None, note="")
                 for key in SECTION_POINTS
@@ -291,13 +304,17 @@ class TestAchievementBands:
             keywords_present=frozenset(),
         )
         job = JobProfile(
-            raw_text="x", job_title=None, company_name=None,
-            required_skills=("python",), preferred_skills=("redis",),
-            min_years_experience=None, required_education_level=None,
-            keywords=("platform",), requirement_split_inferred=False,
+            raw_text="x",
+            job_title=None,
+            company_name=None,
+            required_skills=("python",),
+            preferred_skills=("redis",),
+            min_years_experience=None,
+            required_education_level=None,
+            keywords=("platform",),
+            requirement_split_inferred=False,
         )
         category = next(
-            c for c in compute_score(resume, job).categories
-            if c.key == "measurable_achievements"
+            c for c in compute_score(resume, job).categories if c.key == "measurable_achievements"
         )
         assert category.points_earned == pytest.approx(expected, abs=0.01)

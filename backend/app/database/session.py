@@ -15,7 +15,10 @@ _is_sqlite = settings.database_url.startswith("sqlite")
 engine: Engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    connect_args={"check_same_thread": False} if _is_sqlite else {},
+    connect_args={"check_same_thread": False}
+    if _is_sqlite
+    else {"connect_timeout": 10, "prepare_threshold": None},
+    **({} if _is_sqlite else {"pool_size": 2, "max_overflow": 2, "pool_timeout": 10}),
     echo=False,
 )
 

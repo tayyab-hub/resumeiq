@@ -16,7 +16,8 @@ from app.database.base import Base
 from app.models import *  # noqa: F403  - registers every table on the metadata
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+migration_url = settings.migration_database_url or settings.database_url
+config.set_main_option("sqlalchemy.url", migration_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -26,7 +27,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=migration_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -37,6 +38,13 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    supplied = config.attributes.get("connection")
+    if supplied is not None:
+        context.configure(connection=supplied, target_metadata=target_metadata,
+                          render_as_batch=supplied.dialect.name == "sqlite")
+        with context.begin_transaction():
+            context.run_migrations()
+        return
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

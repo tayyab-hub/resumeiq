@@ -19,9 +19,10 @@ from app.core.exceptions import AppError
 class AccessTokenClaims:
     user_id: uuid.UUID
     expires_at: datetime
+    session_version: int
 
 
-def create_access_token(user_id: uuid.UUID) -> tuple[str, int]:
+def create_access_token(user_id: uuid.UUID, session_version: int = 0) -> tuple[str, int]:
     """Return (token, seconds_until_expiry)."""
     ttl = timedelta(minutes=settings.access_token_ttl_minutes)
     now = datetime.now(UTC)
@@ -30,6 +31,7 @@ def create_access_token(user_id: uuid.UUID) -> tuple[str, int]:
         "iat": int(now.timestamp()),
         "exp": int((now + ttl).timestamp()),
         "type": "access",
+        "ver": session_version,
     }
     token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     return token, int(ttl.total_seconds())
@@ -60,6 +62,7 @@ def decode_access_token(token: str) -> AccessTokenClaims:
     return AccessTokenClaims(
         user_id=user_id,
         expires_at=datetime.fromtimestamp(payload["exp"], tz=UTC),
+        session_version=payload.get("ver", 0),
     )
 
 

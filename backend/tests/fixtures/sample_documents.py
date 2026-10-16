@@ -100,29 +100,34 @@ def build_pdf(text: str) -> bytes:
     Generated rather than committed as a binary so the fixtures are readable in
     a diff and contain no hidden metadata.
     """
-    import fitz
+    import io
+    import textwrap
 
-    document = fitz.open()
-    for chunk_start in range(0, len(text), 2600):
-        page = document.new_page()
-        page.insert_textbox(
-            fitz.Rect(40, 40, 555, 800),
-            text[chunk_start : chunk_start + 2600],
-            fontsize=9,
-            fontname="helv",
-        )
-    data = document.tobytes()
-    document.close()
-    return data
+    from reportlab.pdfgen.canvas import Canvas
+
+    stream = io.BytesIO()
+    canvas = Canvas(stream, pagesize=(595, 842), invariant=1)
+    canvas.setFont("Helvetica", 9)
+    y = 800
+    for line in text.splitlines():
+        for wrapped in textwrap.wrap(line, width=105) or [""]:
+            if y < 45:
+                canvas.showPage()
+                canvas.setFont("Helvetica", 9)
+                y = 800
+            canvas.drawString(40, y, wrapped)
+            y -= 12
+    canvas.save()
+    return stream.getvalue()
 
 
 def build_image_only_pdf() -> bytes:
-    """A PDF with pages but no text layer, standing in for a scanned resume."""
-    import fitz
+    import io
 
-    document = fitz.open()
-    page = document.new_page()
-    page.draw_rect(fitz.Rect(50, 50, 300, 300), color=(0, 0, 0), fill=(0.6, 0.6, 0.6))
-    data = document.tobytes()
-    document.close()
-    return data
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(595, 842)
+    stream = io.BytesIO()
+    writer.write(stream)
+    return stream.getvalue()

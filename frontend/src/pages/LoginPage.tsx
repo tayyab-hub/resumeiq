@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/Field';
-import { Card, CardBody, ErrorMessage } from '@/components/ui/Primitives';
+import { Alert, Card, CardBody, ErrorMessage } from '@/components/ui/Primitives';
 import { loginSchema, type LoginValues } from '@/schemas/forms';
 import { useAuth } from '@/hooks/authContext';
 import { ApiError, toApiError } from '@/api/client';
@@ -44,6 +44,12 @@ export function LoginPage() {
 
       <Card>
         <CardBody className="space-y-5">
+          {searchParams.get('password') === 'changed' && (
+            <Alert tone="success">
+              Your password has been changed. All sessions have ended. Sign in with your new
+              password.
+            </Alert>
+          )}
           {submitError && <ErrorMessage error={submitError} />}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -67,7 +73,7 @@ export function LoginPage() {
               type="submit"
               className="w-full"
               isLoading={isSubmitting}
-              loadingLabel="Signing inâ€¦"
+              loadingLabel="Signing in…"
             >
               Sign in
             </Button>

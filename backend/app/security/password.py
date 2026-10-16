@@ -20,15 +20,19 @@ _DUMMY_HASH = bcrypt.hashpw(b"resumeiq-timing-equalisation", bcrypt.gensalt(roun
 
 
 def hash_password(plain_password: str) -> str:
-    encoded = plain_password.encode("utf-8")[:MAX_PASSWORD_BYTES]
+    encoded = plain_password.encode("utf-8")
+    if len(encoded) > MAX_PASSWORD_BYTES:
+        raise ValueError("Password must be at most 72 UTF-8 bytes")
     salt = bcrypt.gensalt(rounds=settings.bcrypt_rounds)
     return bcrypt.hashpw(encoded, salt).decode("utf-8")
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
     try:
+        if len(plain_password.encode("utf-8")) > MAX_PASSWORD_BYTES:
+            return False
         return bcrypt.checkpw(
-            plain_password.encode("utf-8")[:MAX_PASSWORD_BYTES],
+            plain_password.encode("utf-8"),
             password_hash.encode("utf-8"),
         )
     except (ValueError, TypeError):

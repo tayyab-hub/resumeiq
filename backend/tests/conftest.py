@@ -18,11 +18,12 @@ import pytest
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("DEBUG", "false")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-that-is-definitely-long-enough-here")
-os.environ.setdefault("AI_API_KEY", "")
+os.environ["AI_API_KEY"] = ""
+os.environ["AI_ENABLED_OPT_IN"] = "false"
 os.environ.setdefault("BCRYPT_ROUNDS", "4")  # keeps the suite fast; production uses 12
 
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy import create_engine, text  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
@@ -35,6 +36,36 @@ from app.security.rate_limit import limiter  # noqa: E402
 
 @pytest.fixture()
 def db_engine():
+    test_url = os.environ.get("TEST_DATABASE_URL")
+    if test_url:
+        from alembic.config import Config
+        from sqlalchemy.engine import make_url
+
+        from alembic import command
+
+        url = make_url(test_url)
+        if url.host not in {"localhost", "127.0.0.1", "postgres"} or not (
+            url.database or ""
+        ).endswith("_test"):
+            raise RuntimeError("TEST_DATABASE_URL must name a local disposable *_test database")
+        schema = "resumeiq_test_" + uuid.uuid4().hex
+        admin = create_engine(test_url)
+        with admin.begin() as conn:
+            conn.execute(text(f'CREATE SCHEMA "{schema}"'))
+        engine = create_engine(test_url, connect_args={"options": f"-csearch_path={schema}"})
+        try:
+            with engine.begin() as conn:
+                config = Config("alembic.ini")
+                config.attributes["connection"] = conn
+                command.upgrade(config, "head")
+            yield engine
+        finally:
+            engine.dispose()
+            # Only this test's UUID schema is removed, never public or production.
+            with admin.begin() as conn:
+                conn.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+            admin.dispose()
+        return
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -107,7 +138,9 @@ def client_swallowing_errors(db_engine) -> Iterator[TestClient]:
     limiter.clear()
 
 
-def register_user(client: TestClient, email: str | None = None, password: str = "correct horse 7") -> dict:
+def register_user(
+    client: TestClient, email: str | None = None, password: str = "correct horse 7"
+) -> dict:
     """Register a user and return {token, email, password, user}."""
     email = email or f"user-{uuid.uuid4().hex[:8]}@example.com"
     response = client.post(

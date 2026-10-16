@@ -46,6 +46,7 @@ def authenticate(db: Session, *, email: str, password: str) -> User:
         # whether the account exists.
         waste_time_like_a_real_verification()
         raise AppError(INVALID_CREDENTIALS)
+    db.refresh(user, with_for_update=True)
     if not user.is_active or not verify_password(password, user.password_hash):
         raise AppError(INVALID_CREDENTIALS)
     return user
@@ -62,10 +63,10 @@ def issue_refresh_token(db: Session, user_id: uuid.UUID) -> tuple[str, int]:
 def redeem_refresh_token(db: Session, raw_token: str | None) -> User:
     if not raw_token:
         raise AppError(REFRESH_INVALID)
-    stored = users.find_active_refresh_token(db, hash_refresh_token(raw_token))
-    if stored is None:
+    user_id = users.consume_refresh_token(db, hash_refresh_token(raw_token))
+    if user_id is None:
         raise AppError(REFRESH_INVALID)
-    user = users.get_by_id(db, stored.user_id)
+    user = users.get_by_id(db, user_id)
     if user is None or not user.is_active:
         raise AppError(REFRESH_INVALID)
     return user
@@ -77,15 +78,18 @@ def revoke(db: Session, raw_token: str | None) -> None:
 
 
 def change_password(db: Session, user: User, *, current: str, new: str) -> None:
+    db.refresh(user, with_for_update=True)
     if not verify_password(current, user.password_hash):
         raise AppError(PASSWORD_INCORRECT)
     user.password_hash = hash_password(new)
-    db.commit()
+    user.session_version += 1
+    db.flush()
     # A password change must end every existing session.
     users.revoke_all_for_user(db, user.id)
 
 
 def delete_account(db: Session, user: User, *, password: str) -> None:
+    db.refresh(user, with_for_update=True)
     if not verify_password(password, user.password_hash):
         raise AppError(PASSWORD_INCORRECT)
     users.delete_user(db, user)

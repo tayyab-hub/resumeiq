@@ -48,7 +48,7 @@ export function RegisterPage() {
       <div className="mb-6 text-center">
         <h1 className="text-2xl">Create your account</h1>
         <p className="mt-2 text-sm text-ink-500">
-          Free, and your resume file is never stored on our servers.
+          Free to try. Read the privacy information before uploading a resume.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export function RegisterPage() {
               type="submit"
               className="w-full"
               isLoading={isSubmitting}
-              loadingLabel="Creating accountâ€¦"
+              loadingLabel="Creating account…"
             >
               Create account
             </Button>

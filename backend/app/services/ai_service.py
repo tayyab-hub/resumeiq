@@ -1,21 +1,15 @@
-"""AI-assisted recommendations, with a hard guarantee of graceful degradation.
+"""Optional, advisory AI. Disabled by default; failures preserve deterministic results.
 
-Two rules govern this module:
-
-1. **It can never fail the request.** Every failure path returns
-   `(None, reason_code)`. The caller falls back to the rule-based
-   recommendations that were already produced.
-
-2. **It never sends the resume.** The prompt is assembled from *derived
-   findings* — skill names, flagged statements, missing sections. The PDF, the
-   full resume text, and the user's name, email, phone and address never reach
-   the provider.
+Only curated skill labels, section identifiers, numeric counts and issue codes
+are sent. Free-form titles, statements and contact details are excluded.
 """
 
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Annotated, Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.analyzers.domain import JobProfile, ResumeProfile, ScoreBreakdown
 from app.core.config import settings
@@ -58,72 +52,41 @@ ABSOLUTE RULES, in priority order:
 
 Return ONLY the JSON object described by the schema. No preamble, no markdown fences."""
 
-_RESPONSE_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "summary_suggestion": {
-            "type": "string",
-            "description": (
-                "A suggested professional summary of 2-3 sentences, built ONLY from skills and "
-                "experience present in the input. Use [placeholders] for anything unknown."
-            ),
-        },
-        "statement_rewrites": {
-            "type": "array",
-            "maxItems": 6,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "original": {"type": "string"},
-                    "improved": {"type": "string"},
-                    "why": {"type": "string"},
-                },
-                "required": ["original", "improved", "why"],
-                "additionalProperties": False,
-            },
-        },
-        "skill_guidance": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "skill": {"type": "string"},
-                    "advice": {"type": "string"},
-                },
-                "required": ["skill", "advice"],
-                "additionalProperties": False,
-            },
-        },
-        "interview_points": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {"type": "string"},
-        },
-        "priority_actions": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "priority": {"type": "string", "enum": ["high", "medium", "low"]},
-                    "title": {"type": "string"},
-                    "detail": {"type": "string"},
-                },
-                "required": ["priority", "title", "detail"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    "required": [
-        "summary_suggestion",
-        "statement_rewrites",
-        "skill_guidance",
-        "interview_points",
-        "priority_actions",
-    ],
-    "additionalProperties": False,
-}
+ShortText = Annotated[str, Field(max_length=160)]
+AdviceText = Annotated[str, Field(max_length=2000)]
+
+
+class StrictOutput(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+
+class StatementRewrite(StrictOutput):
+    original: AdviceText
+    improved: AdviceText
+    why: AdviceText
+
+
+class SkillGuidance(StrictOutput):
+    skill: ShortText
+    advice: AdviceText
+
+
+class PriorityAction(StrictOutput):
+    priority: Literal["high", "medium", "low"]
+    title: ShortText
+    detail: AdviceText
+
+
+class AIOutput(StrictOutput):
+    summary_suggestion: AdviceText
+    statement_rewrites: list[StatementRewrite] = Field(max_length=6)
+    skill_guidance: list[SkillGuidance] = Field(max_length=5)
+    interview_points: list[AdviceText] = Field(max_length=5)
+    priority_actions: list[PriorityAction] = Field(max_length=5)
+
+
+_RESPONSE_SCHEMA = AIOutput.model_json_schema()
+MAX_RESPONSE_BYTES = 64 * 1024
 
 
 def build_prompt_payload(
@@ -136,16 +99,17 @@ def build_prompt_payload(
     """
     matched = [c.display for c in breakdown.skill_comparisons if c.match_status == "matched"]
     missing_required = [
-        c.display for c in breakdown.skill_comparisons
+        c.display
+        for c in breakdown.skill_comparisons
         if c.match_status == "missing" and c.requirement_level == "required"
     ]
     missing_preferred = [
-        c.display for c in breakdown.skill_comparisons
+        c.display
+        for c in breakdown.skill_comparisons
         if c.match_status == "missing" and c.requirement_level == "preferred"
     ]
 
     return {
-        "job_title": job.job_title,
         "overall_score": breakdown.overall_score,
         "matched_skills": matched[:25],
         "missing_required_skills": missing_required[:15],
@@ -155,8 +119,7 @@ def build_prompt_payload(
         "statements_with_measurable_result": resume.statements.with_measurable_result,
         "action_verb_rate": resume.statements.action_verb_rate,
         "weak_statements": [
-            {"text": f.text, "issues": list(f.issue_codes)}
-            for f in resume.statements.findings[:8]
+            {"issues": list(f.issue_codes)} for f in resume.statements.findings[:8]
         ],
         "years_experience_required": job.min_years_experience,
         "months_experience_detected": resume.experience.total_months,
@@ -173,11 +136,19 @@ def _classify_error(exc: Exception) -> str:
 
 
 def _extract_json(response: Any) -> dict[str, Any] | None:
-    for block in getattr(response, "content", []) or []:
+    content = getattr(response, "content", None)
+    if not isinstance(content, (list, tuple)):
+        return None
+    for block in content:
         if getattr(block, "type", None) == "text":
             try:
+                if (
+                    not isinstance(block.text, str)
+                    or len(block.text.encode("utf-8")) > MAX_RESPONSE_BYTES
+                ):
+                    return None
                 parsed = json.loads(block.text)
-            except (json.JSONDecodeError, TypeError, AttributeError):
+            except (json.JSONDecodeError, TypeError, AttributeError, RecursionError):
                 return None
             return parsed if isinstance(parsed, dict) else None
     return None
@@ -189,25 +160,11 @@ def _validate(payload: dict[str, Any]) -> bool:
     Malformed output is treated as an AI failure rather than passed through:
     unvalidated model output must never reach the database or the user.
     """
-    required_keys = _RESPONSE_SCHEMA["required"]
-    if not all(key in payload for key in required_keys):
+    try:
+        AIOutput.model_validate(payload)
+        return len(json.dumps(payload).encode("utf-8")) <= MAX_RESPONSE_BYTES
+    except (ValidationError, TypeError, ValueError, RecursionError):
         return False
-    if not isinstance(payload["summary_suggestion"], str):
-        return False
-    for key in ("statement_rewrites", "skill_guidance", "priority_actions", "interview_points"):
-        if not isinstance(payload[key], list):
-            return False
-    for item in payload["priority_actions"]:
-        if not isinstance(item, dict):
-            return False
-        if item.get("priority") not in {"high", "medium", "low"}:
-            return False
-        if not isinstance(item.get("title"), str) or not isinstance(item.get("detail"), str):
-            return False
-    for item in payload["statement_rewrites"]:
-        if not isinstance(item, dict) or not isinstance(item.get("improved"), str):
-            return False
-    return True
 
 
 def generate_recommendations(
@@ -233,7 +190,7 @@ def generate_recommendations(
         client = anthropic.Anthropic(
             api_key=settings.ai_api_key,
             timeout=settings.ai_timeout_seconds,
-            max_retries=1,
+            max_retries=0,
         )
         response = client.messages.create(
             model=settings.ai_model,
@@ -279,30 +236,36 @@ def generate_recommendations(
 
 def to_recommendation_rows(payload: dict[str, Any], start_order: int) -> list[dict]:
     """Flatten a validated AI payload into recommendation rows."""
+    if not _validate(payload):
+        raise ValueError("Invalid AI output")
     rows: list[dict] = []
     order = start_order
 
     for action in payload.get("priority_actions", []):
-        rows.append({
-            "priority": action["priority"],
-            "source": "ai",
-            "category": "statements",
-            "title": action["title"][:160],
-            "detail": action["detail"],
-            "display_order": order,
-        })
+        rows.append(
+            {
+                "priority": action["priority"],
+                "source": "ai",
+                "category": "statements",
+                "title": action["title"][:160],
+                "detail": action["detail"],
+                "display_order": order,
+            }
+        )
         order += 1
 
     summary = payload.get("summary_suggestion", "").strip()
     if summary:
-        rows.append({
-            "priority": "medium",
-            "source": "ai",
-            "category": "sections",
-            "title": "Suggested professional summary",
-            "detail": summary,
-            "display_order": order,
-        })
+        rows.append(
+            {
+                "priority": "medium",
+                "source": "ai",
+                "category": "sections",
+                "title": "Suggested professional summary",
+                "detail": summary,
+                "display_order": order,
+            }
+        )
         order += 1
 
     rewrites = payload.get("statement_rewrites", [])
@@ -313,36 +276,42 @@ def to_recommendation_rows(payload: dict[str, Any], start_order: int) -> list[di
             f"Why: {item.get('why', '').strip()}"
             for item in rewrites
         )
-        rows.append({
-            "priority": "high",
-            "source": "ai",
-            "category": "statements",
-            "title": f"Suggested rewrites for {len(rewrites)} statement(s)",
-            "detail": body,
-            "display_order": order,
-        })
+        rows.append(
+            {
+                "priority": "high",
+                "source": "ai",
+                "category": "statements",
+                "title": f"Suggested rewrites for {len(rewrites)} statement(s)",
+                "detail": body,
+                "display_order": order,
+            }
+        )
         order += 1
 
     for guidance in payload.get("skill_guidance", []):
-        rows.append({
-            "priority": "medium",
-            "source": "ai",
-            "category": "skills",
-            "title": f"Building evidence for {guidance['skill']}"[:160],
-            "detail": guidance["advice"],
-            "display_order": order,
-        })
+        rows.append(
+            {
+                "priority": "medium",
+                "source": "ai",
+                "category": "skills",
+                "title": f"Building evidence for {guidance['skill']}"[:160],
+                "detail": guidance["advice"],
+                "display_order": order,
+            }
+        )
         order += 1
 
     points = [p for p in payload.get("interview_points", []) if isinstance(p, str) and p.strip()]
     if points:
-        rows.append({
-            "priority": "low",
-            "source": "ai",
-            "category": "interview",
-            "title": "Interview preparation points",
-            "detail": "\n".join(f"• {point.strip()}" for point in points),
-            "display_order": order,
-        })
+        rows.append(
+            {
+                "priority": "low",
+                "source": "ai",
+                "category": "interview",
+                "title": "Interview preparation points",
+                "detail": "\n".join(f"• {point.strip()}" for point in points),
+                "display_order": order,
+            }
+        )
 
     return rows

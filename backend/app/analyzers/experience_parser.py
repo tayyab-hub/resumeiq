@@ -8,8 +8,19 @@ from datetime import date
 from app.analyzers.domain import EDUCATION_LEVELS, ExperienceEstimate
 
 _MONTHS = {
-    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
-    "jul": 7, "aug": 8, "sep": 9, "sept": 9, "oct": 10, "nov": 11, "dec": 12,
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "may": 5,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "sept": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
 }
 _MONTH_ALT = "|".join(_MONTHS)
 _PRESENT = r"present|current|now|to date|ongoing"
@@ -30,9 +41,25 @@ _YEAR_RANGE = re.compile(rf"\b(\d{{4}}){_DASH}(?:(\d{{4}})|({_PRESENT}))", re.IG
 
 _EDUCATION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("doctorate", re.compile(r"\b(ph\.?d|doctorate|doctoral|d\.phil)\b", re.IGNORECASE)),
-    ("master", re.compile(r"\b(master'?s?|m\.?sc|m\.?a\b|m\.?eng|mba|m\.?tech|postgraduate)\b", re.IGNORECASE)),
-    ("bachelor", re.compile(r"\b(bachelor'?s?|b\.?sc|b\.?a\b|b\.?eng|b\.?tech|bs\b|ba\b|undergraduate degree)\b", re.IGNORECASE)),
-    ("diploma", re.compile(r"\b(diploma|associate'?s? degree|foundation degree|higher national)\b", re.IGNORECASE)),
+    (
+        "master",
+        re.compile(
+            r"\b(master'?s?|m\.?sc|m\.?a\b|m\.?eng|mba|m\.?tech|postgraduate)\b", re.IGNORECASE
+        ),
+    ),
+    (
+        "bachelor",
+        re.compile(
+            r"\b(bachelor'?s?|b\.?sc|b\.?a\b|b\.?eng|b\.?tech|bs\b|ba\b|undergraduate degree)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "diploma",
+        re.compile(
+            r"\b(diploma|associate'?s? degree|foundation degree|higher national)\b", re.IGNORECASE
+        ),
+    ),
     ("certificate", re.compile(r"\b(certificate|certification|certified)\b", re.IGNORECASE)),
 )
 
@@ -40,13 +67,24 @@ _YEARS_REQUIRED = re.compile(
     r"\b(?:(\d{1,2})\s*\+|at least\s+(\d{1,2})|minimum(?:\s+of)?\s+(\d{1,2})|(\d{1,2})\s*(?:-|–|to)\s*\d{1,2})\s*(?:\+\s*)?years?\b",
     re.IGNORECASE,
 )
-_YEARS_SIMPLE = re.compile(r"\b(\d{1,2})\s*(?:\+\s*)?years?(?:\s+of)?\s+(?:relevant\s+|professional\s+|industry\s+)?experience\b", re.IGNORECASE)
+_YEARS_SIMPLE = re.compile(
+    r"\b(\d{1,2})\s*(?:\+\s*)?years?(?:\s+of)?\s+(?:relevant\s+|professional\s+|industry\s+)?experience\b",
+    re.IGNORECASE,
+)
 _YEARS_WORDS = re.compile(
     r"\b(one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:\+\s*)?years?\b", re.IGNORECASE
 )
 _WORD_NUMBERS = {
-    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
 }
 
 
@@ -74,7 +112,7 @@ def estimate_experience_months(text: str, today: date | None = None) -> Experien
     `today` is injected rather than read from the clock so the function stays
     pure and its tests stay deterministic.
     """
-    reference = today or date(2026, 1, 1)
+    reference = today or date.today()
     now_month_index = reference.year * 12 + reference.month
     intervals: list[tuple[int, int]] = []
 

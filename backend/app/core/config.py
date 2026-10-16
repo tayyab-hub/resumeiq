@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 _INSECURE_JWT_DEFAULT = "change-me-to-a-long-random-value-at-least-32-characters"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "ResumeIQ API"
     version: str = "1.0.0"
@@ -22,9 +22,10 @@ class Settings(BaseSettings):
     debug: bool = True
 
     database_url: str = "sqlite+pysqlite:///./resumeiq.db"
+    migration_database_url: str = ""
 
     jwt_secret: str = _INSECURE_JWT_DEFAULT
-    jwt_algorithm: str = "HS256"
+    jwt_algorithm: Literal["HS256"] = "HS256"
     access_token_ttl_minutes: int = 30
     refresh_token_ttl_days: int = 7
     bcrypt_rounds: int = 12
@@ -32,6 +33,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     max_upload_bytes: int = 5 * 1024 * 1024
+    pdf_max_pages: int = Field(default=10, ge=1, le=30)
+    pdf_max_text_chars: int = Field(default=100_000, ge=200, le=200_000)
+    pdf_timeout_seconds: float = Field(default=10, gt=0, le=30)
+    pdf_memory_mb: int = Field(default=256, ge=128, le=320)
     min_extracted_chars: int = 200
     min_job_description_chars: int = 200
     max_job_description_chars: int = 8000
@@ -43,7 +48,8 @@ class Settings(BaseSettings):
     ai_calls_per_day: int = 20
 
     ai_api_key: str = ""
-    ai_model: str = "claude-opus-5"
+    ai_enabled_opt_in: bool = False
+    ai_model: str = ""
     ai_timeout_seconds: float = 20.0
     ai_max_tokens: int = 8000
     ai_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
@@ -65,7 +71,7 @@ class Settings(BaseSettings):
 
     @property
     def ai_enabled(self) -> bool:
-        return bool(self.ai_api_key.strip())
+        return self.ai_enabled_opt_in and bool(self.ai_api_key.strip()) and bool(self.ai_model)
 
     def assert_production_ready(self) -> None:
         """Fail fast rather than serve production traffic with a known-bad secret."""
@@ -75,6 +81,25 @@ class Settings(BaseSettings):
             )
         if self.is_production and self.debug:
             raise RuntimeError("DEBUG must be false in production.")
+        if self.is_production:
+            for value in (self.database_url, self.migration_database_url or self.database_url):
+                url = make_url(value)
+                if url.drivername != "postgresql+psycopg":
+                    raise RuntimeError("Production requires PostgreSQL with the psycopg driver.")
+                if url.query.get("sslmode") not in {"require", "verify-ca", "verify-full"}:
+                    raise RuntimeError("Production database connections must require TLS.")
+            if not self.cors_origin_list or any(
+                urlsplit(origin).scheme != "https"
+                or not urlsplit(origin).hostname
+                or urlsplit(origin).path
+                or urlsplit(origin).query
+                or urlsplit(origin).fragment
+                or "*" in origin
+                for origin in self.cors_origin_list
+            ):
+                raise RuntimeError("Production CORS_ORIGINS must contain exact HTTPS origins.")
+            if self.bcrypt_rounds < 12:
+                raise RuntimeError("Production bcrypt cost must be at least 12.")
 
 
 @lru_cache

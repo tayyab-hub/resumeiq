@@ -40,7 +40,9 @@ from app.models.user import User
 class Analysis(Base):
     __tablename__ = "analyses"
     __table_args__ = (
-        CheckConstraint("overall_score >= 0 AND overall_score <= 100", name="ck_analyses_score_range"),
+        CheckConstraint(
+            "overall_score >= 0 AND overall_score <= 100", name="ck_analyses_score_range"
+        ),
         # The privacy guarantee lives in the schema, not only in application
         # code: resume text cannot exist without the user's explicit opt-in.
         CheckConstraint(
@@ -48,6 +50,7 @@ class Analysis(Base):
             name="ck_analyses_resume_text_optin",
         ),
         Index("ix_analyses_user_created", "user_id", "created_at"),
+        UniqueConstraint("user_id", "request_key", name="uq_analysis_request"),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -56,6 +59,7 @@ class Analysis(Base):
     )
 
     title: Mapped[str] = mapped_column(String(120), nullable=False)
+    request_key: Mapped[str | None] = mapped_column(String(36), nullable=True)
     # Sanitised display label only. Never used to build a filesystem path.
     resume_filename: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -85,25 +89,33 @@ class Analysis(Base):
 
     user: Mapped[User] = relationship(back_populates="analyses")
     job_description: Mapped[JobDescription] = relationship(
-        back_populates="analysis", cascade="all, delete-orphan",
-        passive_deletes=True, uselist=False,
+        back_populates="analysis",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        uselist=False,
     )
     score_categories: Mapped[list[ScoreCategory]] = relationship(
-        back_populates="analysis", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="analysis",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="ScoreCategory.display_order",
     )
     skill_matches: Mapped[list[SkillMatch]] = relationship(
         back_populates="analysis", cascade="all, delete-orphan", passive_deletes=True
     )
     sections: Mapped[list[ResumeSection]] = relationship(
-        back_populates="analysis", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="analysis",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="ResumeSection.display_order",
     )
     statement_findings: Mapped[list[StatementFinding]] = relationship(
         back_populates="analysis", cascade="all, delete-orphan", passive_deletes=True
     )
     recommendations: Mapped[list[Recommendation]] = relationship(
-        back_populates="analysis", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="analysis",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="Recommendation.display_order",
     )
 
@@ -113,8 +125,10 @@ class JobDescription(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     analysis_id: Mapped[uuid.UUID] = mapped_column(
-        UuidType, ForeignKey("analyses.id", ondelete="CASCADE"),
-        nullable=False, unique=True,
+        UuidType,
+        ForeignKey("analyses.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
 
     job_title: Mapped[str | None] = mapped_column(String(160), nullable=True)
@@ -124,9 +138,7 @@ class JobDescription(Base):
 
     min_years_experience: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     required_education_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    requirement_split_inferred: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    requirement_split_inferred: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     analysis: Mapped[Analysis] = relationship(back_populates="job_description")
 
@@ -176,7 +188,9 @@ class SkillMatch(Base):
     skill_name: Mapped[str] = mapped_column(String(80), nullable=False)
     match_status: Mapped[str] = mapped_column(String(12), nullable=False)  # matched|partial|missing
     requirement_level: Mapped[str] = mapped_column(String(12), nullable=False)  # required|preferred
-    matched_via: Mapped[str | None] = mapped_column(String(16), nullable=True)  # exact|alias|related
+    matched_via: Mapped[str | None] = mapped_column(
+        String(16), nullable=True
+    )  # exact|alias|related
     # The only resume-derived text stored outside the opt-in field. Capped,
     # and present because a match the user cannot verify is not credible.
     evidence_snippet: Mapped[str | None] = mapped_column(String(240), nullable=True)
@@ -186,9 +200,7 @@ class SkillMatch(Base):
 
 class ResumeSection(Base):
     __tablename__ = "resume_sections"
-    __table_args__ = (
-        UniqueConstraint("analysis_id", "section_key", name="uq_resume_section"),
-    )
+    __table_args__ = (UniqueConstraint("analysis_id", "section_key", name="uq_resume_section"),)
 
     id: Mapped[uuid.UUID] = uuid_pk()
     analysis_id: Mapped[uuid.UUID] = mapped_column(

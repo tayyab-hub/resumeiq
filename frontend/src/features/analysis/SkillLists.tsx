@@ -29,7 +29,7 @@ function SkillGroup({
   }[tone];
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="flex items-center gap-2">
         <Icon className={`h-4.5 w-4.5 ${iconColour}`} aria-hidden="true" />
         <h4 className="font-medium text-ink-900">
@@ -107,7 +107,7 @@ export function SkillLists({
         />
         <SkillGroup
           title="Missing"
-          description="Not found anywhere in your resume. Add only those you genuinely have."
+          description="Not detected in the extracted text. This does not establish that you lack the skill. Add only skills you have."
           skills={skills.missing}
           icon={XCircle}
           tone="danger"

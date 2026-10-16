@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.error_codes import INTERNAL_ERROR, VALIDATION_ERROR
 from app.core.exceptions import AppError
 from app.core.logging import configure_logging, get_logger
+from app.security.request_guard import RequestGuard
 
 configure_logging(settings.debug)
 logger = get_logger("resumeiq")
@@ -37,10 +38,11 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-Idempotency-Key"],
     expose_headers=["X-Request-ID", "Retry-After"],
     max_age=600,
 )
+app.add_middleware(RequestGuard)
 
 
 @app.middleware("http")
@@ -61,6 +63,7 @@ async def request_context(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = "no-store"
     if settings.is_production:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
@@ -69,7 +72,7 @@ async def request_context(request: Request, call_next):
         extra={
             "request_id": request_id,
             "method": request.method,
-            "path": request.url.path,
+            "path": getattr(request.scope.get("route"), "path", "unmatched"),
             "status": response.status_code,
             "duration_ms": duration_ms,
         },
@@ -87,7 +90,11 @@ async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
     headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
     logger.info(
         "handled_error",
-        extra={"request_id": _request_id(request), "code": exc.code, "path": request.url.path},
+        extra={
+            "request_id": _request_id(request),
+            "code": exc.code,
+            "path": getattr(request.scope.get("route"), "path", "unmatched"),
+        },
     )
     return JSONResponse(
         status_code=exc.http_status,
@@ -97,9 +104,7 @@ async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
 
 
 @app.exception_handler(RequestValidationError)
-async def handle_validation_error(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Field names and rule messages only — never the submitted values."""
     fields: dict[str, str] = {}
     for error in exc.errors():
@@ -118,18 +123,22 @@ async def handle_validation_error(
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
     """Anything unhandled becomes a generic body plus a request ID.
 
-    The traceback is written to the server log against that ID, so the failure
-    stays traceable without exposing paths, SQL, or library internals.
+    Only the exception class and request ID are logged, avoiding SQL parameters
+    and personal data that can be embedded in exception messages.
     """
     request_id = _request_id(request)
-    logger.exception(
+    logger.error(
         "unhandled_error",
-        extra={"request_id": request_id, "path": request.url.path,
-               "error_type": type(exc).__name__},
+        extra={
+            "request_id": request_id,
+            "path": getattr(request.scope.get("route"), "path", "unmatched"),
+            "error_type": type(exc).__name__,
+        },
     )
     return JSONResponse(
         status_code=INTERNAL_ERROR.http_status,
         content=AppError(INTERNAL_ERROR).to_payload(request_id),
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
     )
 
 

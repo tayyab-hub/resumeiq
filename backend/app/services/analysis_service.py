@@ -9,6 +9,8 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.analyzers.domain import JobProfile, ResumeProfile, ScoreBreakdown
@@ -68,9 +70,11 @@ def persist_analysis(
     job_title: str | None,
     company_name: str | None,
     raw_job_description: str,
+    request_key: str | None = None,
 ) -> Analysis:
     analysis = Analysis(
         user_id=user_id,
+        request_key=request_key,
         title=title[:120],
         resume_filename=resume_filename[:255],
         overall_score=breakdown.overall_score,
@@ -152,13 +156,32 @@ def persist_analysis(
     ]
 
     db.add(analysis)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = (
+            db.scalar(
+                select(Analysis).where(
+                    Analysis.user_id == user_id,
+                    Analysis.request_key == request_key,
+                )
+            )
+            if request_key
+            else None
+        )
+        if existing is None:
+            raise
+        return existing
     db.refresh(analysis)
     return analysis
 
 
 def enrich_with_ai(
-    db: Session, analysis: Analysis, resume: ResumeProfile, job: JobProfile,
+    db: Session,
+    analysis: Analysis,
+    resume: ResumeProfile,
+    job: JobProfile,
     breakdown: ScoreBreakdown,
 ) -> Analysis:
     """Attach AI recommendations if the provider cooperates.
@@ -187,7 +210,10 @@ def enrich_with_ai(
 
 
 def replace_ai_recommendations(
-    db: Session, analysis: Analysis, resume: ResumeProfile, job: JobProfile,
+    db: Session,
+    analysis: Analysis,
+    resume: ResumeProfile,
+    job: JobProfile,
     breakdown: ScoreBreakdown,
 ) -> Analysis:
     """Re-run AI enrichment for a stored analysis, discarding previous AI rows.

@@ -40,6 +40,4 @@ def created_at_column():
 
 
 def updated_at_column():
-    return mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow
-    )
+    return mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)

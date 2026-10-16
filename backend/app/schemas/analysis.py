@@ -121,6 +121,7 @@ class AnalysisDetailOut(BaseModel):
 
     overall_score: int
     disclaimer: str = DISCLAIMER
+    evidence_warnings: list[str] = Field(default_factory=list)
 
     score_breakdown: list[ScoreCategoryOut]
     skills: SkillGroupsOut

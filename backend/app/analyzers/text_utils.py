@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from app.analyzers.vocabulary import action_verbs, generic_phrases
+
 # Bullet glyphs commonly produced by Word, Google Docs, and LaTeX exports.
 _BULLET_GLYPHS = "•▪◦‣∙·●○■□–—*"
 _BULLET_PREFIX = re.compile(rf"^[\s{re.escape(_BULLET_GLYPHS)}\-]+")
@@ -59,17 +61,25 @@ def split_lines(text: str) -> list[str]:
 def extract_bullets(text: str) -> list[str]:
     """Return candidate achievement statements.
 
-    A statement is either an explicitly bulleted line or a standalone sentence
-    line long enough to be a claim rather than a heading.
+    Explicit bullets are preferred. Unmarked lines must begin with a known
+    action verb or duty phrase, so contact details and skill lists are excluded.
     """
     bullets: list[str] = []
     for line in split_lines(text):
+        explicit = bool(_BULLET_PREFIX.match(line))
         stripped = _BULLET_PREFIX.sub("", line).strip()
         if len(stripped) < 25:
             continue
         # Headings are short, title-cased, and unpunctuated; those are excluded
         # by the length rule above and by requiring at least four words.
         if len(stripped.split()) < 4:
+            continue
+        first = re.sub(r"[^a-z]", "", stripped.split()[0].lower())
+        if (
+            not explicit
+            and first not in action_verbs()
+            and not any(stripped.lower().startswith(phrase) for phrase in generic_phrases())
+        ):
             continue
         bullets.append(stripped)
     return bullets

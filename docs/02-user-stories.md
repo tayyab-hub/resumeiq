@@ -1,3 +1,5 @@
+> Historical planning/acceptance document. For implemented release behavior and measured verification, see [release readiness](10-release-readiness.md), [architecture](03-architecture.md) and [security](07-security-privacy.md). Unchecked planning items are not claims of completed validation.
+
 # ResumeIQ — User Stories and Acceptance Criteria
 
 > Phase 1 deliverable. Each story maps to functional requirements in `01-requirements.md`

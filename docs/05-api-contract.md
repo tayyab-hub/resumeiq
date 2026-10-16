@@ -4,6 +4,14 @@
 > mirror. FastAPI generates live OpenAPI docs at `/docs`; this document is the design
 > intent and the reference for error codes.
 
+## Release contract additions — 15 October 2026
+
+Production serves the browser through same-origin `/api/v1`. Exact allowed Origin is required for mutations. Refresh cookies are host-only, HttpOnly, Secure in production, SameSite=Lax and scoped to `/api/v1/auth`. Password changes invalidate earlier access/refresh sessions; logout clears/revokes the refresh only. All API success/error responses use Cache-Control: no-store. `/docs` and OpenAPI are development-only.
+
+`POST /analyses` optionally accepts UUID `X-Idempotency-Key`: first persistence returns 201, retry of that user's key returns the existing report with 200. Another user's same key is independent. Job/company titles are limited to 160 characters and report title to 120. Passwords additionally reject more than 72 UTF-8 bytes. PDF bounds are 5 MB, 10 pages, 100,000 extracted characters and 10 seconds by default, with safe resource-limit errors.
+
+Analysis detail includes `evidence_warnings`, a list explaining insufficient extracted job skills, absent candidate statements or an inferred requirement split. AI is unavailable by default and requires explicit server opt-in/key/model; provider failures do not invalidate deterministic results. The public `/sample` frontend route reads bundled fictional JSON and is not a private API endpoint.
+
 Base path: `/api/v1`
 Auth: `Authorization: Bearer <access_token>` unless marked **public**.
 
@@ -91,7 +99,7 @@ so it cannot leak by accident.
 // request
 { "email": "ada@example.com", "password": "analytical2026" }
 
-// 200 — plus Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=None; Path=/api/v1/auth
+// 200 — plus Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 { "access_token": "eyJ...", "token_type": "bearer", "expires_in": 1800,
   "user": { "id": "uuid", "full_name": "Ada Lovelace", "email": "ada@example.com" } }
 ```
@@ -215,7 +223,7 @@ Errors, all with the three-part message body:
 | `RESUME_INVALID_TYPE` | 415 | Extension, MIME, or magic bytes disagree |
 | `RESUME_TOO_LARGE` | 413 | > 5 MB |
 | `RESUME_EMPTY` | 422 | 0 bytes |
-| `RESUME_CORRUPT` | 422 | PyMuPDF cannot open it |
+| `RESUME_CORRUPT` | 422 | The isolated pypdf parser cannot safely read it |
 | `RESUME_ENCRYPTED` | 422 | Password-protected |
 | `RESUME_NO_TEXT_LAYER` | 422 | < 200 meaningful characters extracted |
 | `JOB_DESCRIPTION_TOO_SHORT` | 422 | < 200 chars |

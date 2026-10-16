@@ -111,7 +111,8 @@ def analyse_statements(text: str) -> StatementAnalysis:
 
     phrase_counts = Counter(_normalised_phrase_key(bullet) for bullet in bullets)
     repeated = {
-        phrase for phrase, count in phrase_counts.items()
+        phrase
+        for phrase, count in phrase_counts.items()
         if count >= REPETITION_THRESHOLD and phrase
     }
 

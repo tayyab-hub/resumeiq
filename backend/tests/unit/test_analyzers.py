@@ -109,9 +109,7 @@ class TestPdfExtraction:
         for payload in (b"", b"MZ\x90", b"%PDF-1.7 broken"):
             with pytest.raises(ExtractionError) as exc:
                 extract_text(payload)
-            combined = " ".join(
-                [exc.value.spec.what, exc.value.spec.why, exc.value.spec.next_step]
-            )
+            combined = " ".join([exc.value.spec.what, exc.value.spec.why, exc.value.spec.next_step])
             assert ".py" not in combined
             assert "Traceback" not in combined
             assert "fitz" not in combined.lower()
@@ -203,6 +201,17 @@ class TestExperienceParsing:
     def test_reads_an_open_ended_range_against_the_injected_date(self):
         result = estimate_experience_months("Jan 2025 - Present", today=date(2026, 1, 1))
         assert result.total_months == 12
+
+    def test_default_reference_uses_current_date(self, monkeypatch):
+        from app.analyzers import experience_parser
+
+        class CurrentDate(date):
+            @classmethod
+            def today(cls):
+                return cls(2027, 4, 15)
+
+        monkeypatch.setattr(experience_parser, "date", CurrentDate)
+        assert estimate_experience_months("Jan 2025 - Present").total_months == 27
 
     def test_reads_a_numeric_range(self):
         result = estimate_experience_months("03/2022 - 03/2024", today=date(2026, 1, 1))

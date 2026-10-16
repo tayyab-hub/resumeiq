@@ -47,14 +47,18 @@ def list_for_owner(
         select(func.count()).select_from(Analysis).where(Analysis.user_id == owner_id)
     ).scalar_one()
 
-    rows = db.execute(
-        select(Analysis)
-        .where(Analysis.user_id == owner_id)
-        .options(selectinload(Analysis.job_description))
-        .order_by(Analysis.created_at.desc())
-        .offset(max(0, (page - 1) * page_size))
-        .limit(page_size)
-    ).scalars().all()
+    rows = (
+        db.execute(
+            select(Analysis)
+            .where(Analysis.user_id == owner_id)
+            .options(selectinload(Analysis.job_description))
+            .order_by(Analysis.created_at.desc())
+            .offset(max(0, (page - 1) * page_size))
+            .limit(page_size)
+        )
+        .scalars()
+        .all()
+    )
 
     return rows, total
 
@@ -130,7 +134,5 @@ def dashboard_stats(db: Session, owner_id: uuid.UUID) -> dict:
             {"date": _aware(created).date().isoformat(), "score": score}
             for score, created in rows[-20:]
         ],
-        "common_missing_skills": [
-            {"skill": name, "occurrences": count} for name, count in missing
-        ],
+        "common_missing_skills": [{"skill": name, "occurrences": count} for name, count in missing],
     }

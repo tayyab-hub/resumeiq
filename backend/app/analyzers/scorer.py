@@ -85,8 +85,8 @@ LIMITATIONS: dict[str, str] = {
         "layout may cause a section you do have to be reported as missing."
     ),
     "measurable_achievements": (
-        "Numbers are detected by pattern. A quantified outcome written in words (\"halved the "
-        "processing time\") may be missed, and a number that is not an achievement may "
+        'Numbers are detected by pattern. A quantified outcome written in words ("halved the '
+        'processing time") may be missed, and a number that is not an achievement may '
         "occasionally be counted."
     ),
     "statement_quality": (
@@ -231,10 +231,15 @@ def _score_skill_category(
         )
         return (
             ScoredCategory(
-                key=key, name=CATEGORY_NAMES[key], weight=weight,
-                points_earned=0.0, points_possible=0.0,
-                explanation=explanation, evidence=[],
-                recommendation=None, limitation=LIMITATIONS[key],
+                key=key,
+                name=CATEGORY_NAMES[key],
+                weight=weight,
+                points_earned=0.0,
+                points_possible=0.0,
+                explanation=explanation,
+                evidence=[],
+                recommendation=None,
+                limitation=LIMITATIONS[key],
             ),
             False,
         )
@@ -242,14 +247,14 @@ def _score_skill_category(
     points = weight * (units / total)
     missing = total - matched - partial
 
-    explanation = (
-        f"Your resume matched {matched} of {total} {level} skills"
-        + (f", and partially matched {partial}." if partial else ".")
+    explanation = f"Your resume matched {matched} of {total} {level} skills" + (
+        f", and partially matched {partial}." if partial else "."
     )
     recommendation = None
     if missing:
         missing_names = [
-            c.display for c in comparisons
+            c.display
+            for c in comparisons
             if c.requirement_level == level and c.match_status == "missing"
         ][:5]
         recommendation = (
@@ -265,10 +270,15 @@ def _score_skill_category(
 
     return (
         ScoredCategory(
-            key=key, name=CATEGORY_NAMES[key], weight=weight,
-            points_earned=points, points_possible=weight,
-            explanation=explanation, evidence=_evidence(comparisons, level),
-            recommendation=recommendation, limitation=LIMITATIONS[key],
+            key=key,
+            name=CATEGORY_NAMES[key],
+            weight=weight,
+            points_earned=points,
+            points_possible=weight,
+            explanation=explanation,
+            evidence=_evidence(comparisons, level),
+            recommendation=recommendation,
+            limitation=LIMITATIONS[key],
         ),
         True,
     )
@@ -311,13 +321,16 @@ def _score_experience(
     required = [c for c in comparisons if c.requirement_level == "required"]
     found_anywhere = [c for c in required if c.match_status in ("matched", "partial")]
     in_experience = [
-        c for c in found_anywhere
+        c
+        for c in found_anywhere
         if (detected := resume.skill_by_name(c.skill_name)) is not None and detected.in_experience
     ]
 
     if not required:
         context_points = context_max
-        context_note = "No required skills were extracted, so contextual relevance was not penalised."
+        context_note = (
+            "No required skills were extracted, so contextual relevance was not penalised."
+        )
     elif not found_anywhere:
         context_points = 0.0
         context_note = "None of the required skills appear anywhere in your resume."
@@ -336,22 +349,35 @@ def _score_experience(
         )
     elif months is None and job.min_years_experience is not None:
         recommendation = (
-            "Add clear date ranges to each role (for example \"Jan 2023 – Present\") so your "
+            'Add clear date ranges to each role (for example "Jan 2023 – Present") so your '
             "total experience can be read at a glance."
         )
 
     return ScoredCategory(
-        key=key, name=CATEGORY_NAMES[key], weight=weight,
-        points_earned=duration_points + context_points, points_possible=weight,
+        key=key,
+        name=CATEGORY_NAMES[key],
+        weight=weight,
+        points_earned=duration_points + context_points,
+        points_possible=weight,
         explanation=f"{duration_note} {context_note}",
         evidence=[
-            {"measure": "duration", "earned": _q2(duration_points), "possible": duration_max,
-             "detected_months": months, "required_months": required_months or None},
-            {"measure": "contextual_relevance", "earned": _q2(context_points),
-             "possible": context_max, "skills_in_experience": len(in_experience),
-             "skills_found": len(found_anywhere)},
+            {
+                "measure": "duration",
+                "earned": _q2(duration_points),
+                "possible": duration_max,
+                "detected_months": months,
+                "required_months": required_months or None,
+            },
+            {
+                "measure": "contextual_relevance",
+                "earned": _q2(context_points),
+                "possible": context_max,
+                "skills_in_experience": len(in_experience),
+                "skills_found": len(found_anywhere),
+            },
         ],
-        recommendation=recommendation, limitation=LIMITATIONS[key],
+        recommendation=recommendation,
+        limitation=LIMITATIONS[key],
     )
 
 
@@ -363,11 +389,15 @@ def _score_education(resume: ResumeProfile, job: JobProfile) -> ScoredCategory:
 
     if job.required_education_level is None:
         return ScoredCategory(
-            key=key, name=CATEGORY_NAMES[key], weight=weight,
-            points_earned=weight, points_possible=weight,
+            key=key,
+            name=CATEGORY_NAMES[key],
+            weight=weight,
+            points_earned=weight,
+            points_possible=weight,
             explanation="The job description does not state an education requirement.",
             evidence=[{"required": None, "detected": resume.education_level}],
-            recommendation=None, limitation=LIMITATIONS[key],
+            recommendation=None,
+            limitation=LIMITATIONS[key],
         )
 
     required_ordinal = education_ordinal(job.required_education_level)
@@ -414,11 +444,15 @@ def _score_education(resume: ResumeProfile, job: JobProfile) -> ScoredCategory:
             )
 
     return ScoredCategory(
-        key=key, name=CATEGORY_NAMES[key], weight=weight,
-        points_earned=points, points_possible=weight,
+        key=key,
+        name=CATEGORY_NAMES[key],
+        weight=weight,
+        points_earned=points,
+        points_possible=weight,
         explanation=explanation,
         evidence=[{"required": job.required_education_level, "detected": resume.education_level}],
-        recommendation=recommendation, limitation=LIMITATIONS[key],
+        recommendation=recommendation,
+        limitation=LIMITATIONS[key],
     )
 
 
@@ -429,13 +463,18 @@ def _score_keywords(resume: ResumeProfile, job: JobProfile) -> tuple[ScoredCateg
     if not job.keywords:
         return (
             ScoredCategory(
-                key=key, name=CATEGORY_NAMES[key], weight=weight,
-                points_earned=0.0, points_possible=0.0,
+                key=key,
+                name=CATEGORY_NAMES[key],
+                weight=weight,
+                points_earned=0.0,
+                points_possible=0.0,
                 explanation=(
                     "No distinctive keywords could be extracted from this job description, so "
                     "this category was not scored. The remaining categories were rescaled."
                 ),
-                evidence=[], recommendation=None, limitation=LIMITATIONS[key],
+                evidence=[],
+                recommendation=None,
+                limitation=LIMITATIONS[key],
             ),
             False,
         )
@@ -454,16 +493,21 @@ def _score_keywords(resume: ResumeProfile, job: JobProfile) -> tuple[ScoredCateg
     recommendation = (
         "Where these terms genuinely describe your work, use the posting's wording: "
         f"{', '.join(missing[:8])}."
-        if missing else None
+        if missing
+        else None
     )
 
     return (
         ScoredCategory(
-            key=key, name=CATEGORY_NAMES[key], weight=weight,
-            points_earned=points, points_possible=weight,
+            key=key,
+            name=CATEGORY_NAMES[key],
+            weight=weight,
+            points_earned=points,
+            points_possible=weight,
             explanation=explanation,
             evidence=[{"present": present, "missing": missing[:15]}],
-            recommendation=recommendation, limitation=LIMITATIONS[key],
+            recommendation=recommendation,
+            limitation=LIMITATIONS[key],
         ),
         True,
     )
@@ -484,8 +528,12 @@ def _score_completeness(resume: ResumeProfile) -> ScoredCategory:
         elif available > 0:
             missing_scored.append(section.key)
         evidence.append(
-            {"section": section.key, "detected": section.detected,
-             "points": available, "heading": section.matched_heading}
+            {
+                "section": section.key,
+                "detected": section.detected,
+                "points": available,
+                "heading": section.matched_heading,
+            }
         )
 
     explanation = (
@@ -493,15 +541,18 @@ def _score_completeness(resume: ResumeProfile) -> ScoredCategory:
         "sections were detected. Sections are weighted by how much a reader relies on them; "
         "languages is reported but not scored, because its relevance varies too much by role."
     )
-    recommendation = (
-        f"Consider adding: {', '.join(missing_scored)}." if missing_scored else None
-    )
+    recommendation = f"Consider adding: {', '.join(missing_scored)}." if missing_scored else None
 
     return ScoredCategory(
-        key=key, name=CATEGORY_NAMES[key], weight=weight,
-        points_earned=earned, points_possible=weight,
-        explanation=explanation, evidence=evidence,
-        recommendation=recommendation, limitation=LIMITATIONS[key],
+        key=key,
+        name=CATEGORY_NAMES[key],
+        weight=weight,
+        points_earned=earned,
+        points_possible=weight,
+        explanation=explanation,
+        evidence=evidence,
+        recommendation=recommendation,
+        limitation=LIMITATIONS[key],
     )
 
 
@@ -528,16 +579,22 @@ def _score_achievements(resume: ResumeProfile) -> ScoredCategory:
     recommendation = (
         "Add outcomes to your strongest bullets. Use only figures you can substantiate — an "
         "invented number is worse than none."
-        if count < 5 else None
+        if count < 5
+        else None
     )
 
     return ScoredCategory(
-        key=key, name=CATEGORY_NAMES[key], weight=weight,
-        points_earned=points, points_possible=weight,
+        key=key,
+        name=CATEGORY_NAMES[key],
+        weight=weight,
+        points_earned=points,
+        points_possible=weight,
         explanation=explanation,
-        evidence=[{"measurable_statements": count,
-                   "total_statements": resume.statements.total_bullets}],
-        recommendation=recommendation, limitation=LIMITATIONS[key],
+        evidence=[
+            {"measurable_statements": count, "total_statements": resume.statements.total_bullets}
+        ],
+        recommendation=recommendation,
+        limitation=LIMITATIONS[key],
     )
 
 
@@ -545,6 +602,18 @@ def _score_statement_quality(resume: ResumeProfile) -> ScoredCategory:
     key = "statement_quality"
     weight = WEIGHTS[key]
     analysis = resume.statements
+    if analysis.total_bullets == 0:
+        return ScoredCategory(
+            key=key,
+            name=CATEGORY_NAMES[key],
+            weight=weight,
+            points_earned=0,
+            points_possible=0,
+            explanation="No readable bullet statements were detected; writing quality cannot be assessed.",
+            evidence=[],
+            recommendation="Use clear bullet statements describing your work.",
+            limitation=LIMITATIONS[key],
+        )
 
     points = weight
     deductions: list[dict] = []
@@ -555,11 +624,14 @@ def _score_statement_quality(resume: ResumeProfile) -> ScoredCategory:
         deductions.append({"reason": reason, "points": -amount})
 
     if analysis.total_bullets and analysis.action_verb_rate < 0.5:
-        deduct(1.5, f"Only {round(analysis.action_verb_rate * 100)}% of statements open with an action verb")
+        deduct(
+            1.5,
+            f"Only {round(analysis.action_verb_rate * 100)}% of statements open with an action verb",
+        )
 
     generic = sum(1 for f in analysis.findings if ISSUE_GENERIC_PHRASING in f.issue_codes)
     if generic >= 3:
-        deduct(1.5, f"{generic} statements use generic phrasing such as \"responsible for\"")
+        deduct(1.5, f'{generic} statements use generic phrasing such as "responsible for"')
 
     passive = sum(1 for f in analysis.findings if ISSUE_PASSIVE_VOICE in f.issue_codes)
     if passive >= 2:
@@ -577,20 +649,26 @@ def _score_statement_quality(resume: ResumeProfile) -> ScoredCategory:
     explanation = (
         "Statement quality starts at full marks; points are deducted for patterns that weaken "
         "a resume."
-        if deductions else
-        "No weakening patterns were detected across your statements."
+        if deductions
+        else "No weakening patterns were detected across your statements."
     )
     recommendation = (
         "Rewrite the flagged statements to open with an action verb and to state what changed "
         "as a result of your work."
-        if deductions else None
+        if deductions
+        else None
     )
 
     return ScoredCategory(
-        key=key, name=CATEGORY_NAMES[key], weight=weight,
-        points_earned=points, points_possible=weight,
-        explanation=explanation, evidence=deductions,
-        recommendation=recommendation, limitation=LIMITATIONS[key],
+        key=key,
+        name=CATEGORY_NAMES[key],
+        weight=weight,
+        points_earned=points,
+        points_possible=weight,
+        explanation=explanation,
+        evidence=deductions,
+        recommendation=recommendation,
+        limitation=LIMITATIONS[key],
     )
 
 
@@ -617,33 +695,50 @@ def compute_score(resume: ResumeProfile, job: JobProfile) -> ScoreBreakdown:
         (keyword_category, keyword_applicable),
         (_score_completeness(resume), True),
         (_score_achievements(resume), True),
-        (_score_statement_quality(resume), True),
+        (_score_statement_quality(resume), resume.statements.total_bullets > 0),
     ]
 
     # Rescale so the applicable categories always total exactly 100. A job with
     # no preferred skills must not cost the candidate ten points.
     applicable_weight = sum(cat.weight for cat, ok in scored if ok)
     factor = 100.0 / applicable_weight if applicable_weight else 0.0
+    possible = {cat.key: _q2(cat.points_possible * factor) for cat, ok in scored if ok}
+    # Put the rounding residual on the largest category (stable rubric order
+    # breaks ties). Displayed maxima must add to 100, including sparse inputs.
+    if possible:
+        largest = max(possible, key=possible.__getitem__)
+        possible[largest] = _q2(possible[largest] + 100.0 - sum(possible.values()))
 
     categories: list[ScoredCategory] = []
     for category, applicable in scored:
         if not applicable:
             categories.append(
                 ScoredCategory(
-                    key=category.key, name=category.name, weight=category.weight,
-                    points_earned=0.0, points_possible=0.0,
-                    explanation=category.explanation, evidence=category.evidence,
-                    recommendation=category.recommendation, limitation=category.limitation,
+                    key=category.key,
+                    name=category.name,
+                    weight=category.weight,
+                    points_earned=0.0,
+                    points_possible=0.0,
+                    explanation=category.explanation,
+                    evidence=category.evidence,
+                    recommendation=category.recommendation,
+                    limitation=category.limitation,
                 )
             )
             continue
         categories.append(
             ScoredCategory(
-                key=category.key, name=category.name, weight=category.weight,
-                points_earned=_q2(category.points_earned * factor),
-                points_possible=_q2(category.points_possible * factor),
-                explanation=category.explanation, evidence=category.evidence,
-                recommendation=category.recommendation, limitation=category.limitation,
+                key=category.key,
+                name=category.name,
+                weight=category.weight,
+                points_earned=_q2(
+                    category.points_earned / category.points_possible * possible[category.key]
+                ),
+                points_possible=possible[category.key],
+                explanation=category.explanation,
+                evidence=category.evidence,
+                recommendation=category.recommendation,
+                limitation=category.limitation,
             )
         )
 

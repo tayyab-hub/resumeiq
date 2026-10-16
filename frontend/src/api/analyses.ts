@@ -8,6 +8,7 @@ export interface CreateAnalysisPayload {
   companyName?: string;
   title?: string;
   storeResumeText?: boolean;
+  requestKey?: string;
 }
 
 export const analysesApi = {
@@ -18,6 +19,7 @@ export const analysesApi = {
     companyName,
     title,
     storeResumeText = false,
+    requestKey,
   }: CreateAnalysisPayload) => {
     const form = new FormData();
     form.append('resume', resume);
@@ -32,6 +34,7 @@ export const analysesApi = {
         // The deterministic analysis plus an optional AI call can legitimately
         // take a while on a cold free-tier instance.
         timeout: 120_000,
+        headers: requestKey ? { 'X-Idempotency-Key': requestKey } : {},
       })
       .then((r) => r.data);
   },
