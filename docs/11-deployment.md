@@ -18,7 +18,7 @@ Use `postgresql+psycopg` and TLS. Runtime may use a pooled Neon hostname; migrat
 
 ## Backend
 
-`render.yaml`: Docker, root `backend`, Free, Singapore, feature branch, manual deploy. Reuse a ResumeIQ service if one exists. Set production environment/debug false, generated JWT secret, verified DB secrets, exact frontend HTTPS origins, and AI opt-in false with no AI key/model. Never run `seed_demo` in production. One Uvicorn worker binds Render's `PORT`.
+`render.yaml`: Docker, root `backend`, Free, Singapore, `main`, manual deploy. This file is a configuration template: reuse the existing ResumeIQ service and do not reapply it to create another service or regenerate its JWT secret. Preserve existing private settings during a branch transition. Production requires debug false, verified DB secrets, exact frontend HTTPS origins, and AI opt-in false with no AI key/model. Never run `seed_demo` in production. One Uvicorn worker binds Render's `PORT`.
 
 ## Frontend and sessions
 
@@ -41,6 +41,8 @@ Use same-origin proxying for host-only HttpOnly/Secure/Lax refresh cookies. Do n
 Verify health/HTTPS, plans/regions/cost, synthetic registration/login/reload, refresh flags and rotation/replay/logout, fictional PDF and saved history, correct Neon persistence, profile/password invalidation, two-user isolation, deletion/cascades, no-store/error/Origin/resource limits, AI off, keyboard/mobile usability and recovery after natural idle. Never pay for uptime or defeat sleeping. Record actual URLs only after observing them. Keep main unmerged until explicit approval.
 
 ## Post-merge transition — prepared, not executed
+
+16 October 2026: the owner explicitly authorized this transition. The README badge and `render.yaml` changes in step 2 are prepared on the feature branch before merging; completion and deployed revisions remain subject to verified CI and provider evidence.
 
 Do not perform these steps until the owner explicitly approves merging PR #1. The current production branch remains `codex/resumeiq-portfolio-release` on both providers.
 

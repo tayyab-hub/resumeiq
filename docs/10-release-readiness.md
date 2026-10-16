@@ -1,4 +1,12 @@
-# Release readiness — 15 October 2026, final verification
+# Release readiness
+
+## Main-branch release transition — 16 October 2026
+
+The owner authorized merging PR #1 after fresh checks and moving the existing Vercel and Render resources to `main`. Pre-merge inspection confirmed the approved head `6468038465a50817c03d67a81f78263d2dfbb93b`, unchanged base `b1581348b43e529e78df52d41e8a6cc78be93aa0`, and both green head CI runs. The README badge and Render template now target `main`; this does not itself change provider tracking or prove a merge. Actual merge/deployment and live acceptance evidence will be recorded after completion.
+
+## Historical verification — 15 October 2026
+
+The following is the preserved pre-merge verification snapshot; branch, deployment and approval wording in it describes that date.
 
 **READY TO MERGE for the personal portfolio demonstration**, subject to the owner's explicit merge approval. Core live workflows, authorization, persistence, migrations and required CI jobs pass. No known release-blocking defect remains. The direct browser password-form check is blocked by the browser tool's handoff rule; its real API behavior and automated React form integration pass. Authenticated restoration after an actual natural sleep was not separately reproduced; natural cold start and genuine access-token expiry recovery passed independently. These evidence limits are explicit below. This is not a production availability or security certification.
 

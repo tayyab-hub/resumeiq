@@ -2,12 +2,12 @@
 
 Transparent resume and job-description comparison. Every score shows its evidence, weight and limits.
 
-[![CI](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml/badge.svg?branch=codex%2Fresumeiq-portfolio-release)](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml)
+[![CI](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tayyab-hub/resumeiq/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ![Actual hosted sample report](docs/screenshots/sample-desktop.jpg)
 
-**Live demo:** [ResumeIQ](https://resumeiq-lemon-eight.vercel.app) · [Explore the sample](https://resumeiq-lemon-eight.vercel.app/sample) · [Release evidence](docs/10-release-readiness.md). Hosted on Vercel Hobby, Render Free and Neon Free with AI disabled. The reviewed feature branch is deployed; `main` remains unmerged.
+**Live demo:** [ResumeIQ](https://resumeiq-lemon-eight.vercel.app) · [Explore the sample](https://resumeiq-lemon-eight.vercel.app/sample) · [Release evidence](docs/10-release-readiness.md). Hosted on Vercel Hobby, Render Free and Neon Free with AI disabled. The release evidence records the verified revisions and deployment status.
 
 ## Try the portfolio demonstration
 
